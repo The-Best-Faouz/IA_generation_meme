@@ -9,8 +9,8 @@ import android.service.notification.StatusBarNotification
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
 
-class NotificationListenerModule(reactContext: ReactApplicationContext) :
-    ReactContextBaseJavaModule(reactContext) {
+class NotificationListenerModule(context: ReactApplicationContext) :
+    ReactContextBaseJavaModule(context) {
 
     private var isListening = false
 
@@ -19,9 +19,9 @@ class NotificationListenerModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun isPermissionGranted(promise: Promise) {
         try {
-            val cn = ComponentName(reactContext, NotificationListenerService::class.java)
+            val cn = ComponentName(reactApplicationContext, NotificationListenerService::class.java)
             val flat = Settings.Secure.getString(
-                reactContext.contentResolver,
+                reactApplicationContext.contentResolver,
                 "enabled_notification_listeners"
             )
             val granted = flat?.contains(cn.flattenToString()) == true
@@ -33,16 +33,16 @@ class NotificationListenerModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun requestPermission() {
-        val cn = ComponentName(reactContext, NotificationListenerService::class.java)
+        val cn = ComponentName(reactApplicationContext, NotificationListenerService::class.java)
         val flat = Settings.Secure.getString(
-            reactContext.contentResolver,
+            reactApplicationContext.contentResolver,
             "enabled_notification_listeners"
         )
         if (flat?.contains(cn.flattenToString()) != true) {
             val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            reactContext.startActivity(intent)
+            reactApplicationContext.startActivity(intent)
         }
     }
 
@@ -50,10 +50,10 @@ class NotificationListenerModule(reactContext: ReactApplicationContext) :
     fun startListening() {
         if (!isListening) {
             NotificationListenerService.onNotificationCaptured = { data ->
-                if (reactContext.hasActiveReactInstance()) {
+                if (reactApplicationContext.hasActiveReactInstance()) {
                     val map = Arguments.createMap()
                     data.forEach { (k, v) -> map.putString(k, v) }
-                    reactContext
+                    reactApplicationContext
                         .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                         .emit("onNotification", map)
                 }

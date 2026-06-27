@@ -8,8 +8,8 @@ import android.os.Looper
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
 
-class ClipboardModule(reactContext: ReactApplicationContext) :
-    ReactContextBaseJavaModule(reactContext) {
+class ClipboardModule(context: ReactApplicationContext) :
+    ReactContextBaseJavaModule(context) {
 
     private var isMonitoring = false
     private val handler = Handler(Looper.getMainLooper())
@@ -27,7 +27,7 @@ class ClipboardModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun getContent(promise: Promise) {
         try {
-            val clipboard = reactContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clipboard = reactApplicationContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = clipboard.primaryClip
             if (clip != null && clip.itemCount > 0) {
                 val text = clip.getItemAt(0).text?.toString()
@@ -44,7 +44,7 @@ class ClipboardModule(reactContext: ReactApplicationContext) :
     fun startMonitoring() {
         if (isMonitoring) return
         isMonitoring = true
-        val clipboard = reactContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboard = reactApplicationContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         lastClipContent = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
         handler.post(monitorRunnable)
     }
@@ -57,17 +57,17 @@ class ClipboardModule(reactContext: ReactApplicationContext) :
 
     private fun checkClipboard() {
         try {
-            val clipboard = reactContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clipboard = reactApplicationContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = clipboard.primaryClip
             if (clip != null && clip.itemCount > 0) {
                 val text = clip.getItemAt(0).text?.toString()
                 if (text != null && text != lastClipContent && text.isNotBlank()) {
                     lastClipContent = text
-                    if (reactContext.hasActiveReactInstance()) {
+                    if (reactApplicationContext.hasActiveReactInstance()) {
                         val map = Arguments.createMap()
                         map.putString("text", text)
                         map.putDouble("timestamp", System.currentTimeMillis().toDouble())
-                        reactContext
+                        reactApplicationContext
                             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                             .emit("onClipboardChange", map)
                     }

@@ -6,8 +6,8 @@ import android.net.Uri
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
 
-class ShareIntentModule(reactContext: ReactApplicationContext) :
-    ReactContextBaseJavaModule(reactContext) {
+class ShareIntentModule(context: ReactApplicationContext) :
+    ReactContextBaseJavaModule(context) {
 
     private var pendingIntent: Intent? = null
 
@@ -87,8 +87,8 @@ class ShareIntentModule(reactContext: ReactApplicationContext) :
 
     fun handleNewIntent(intent: Intent) {
         pendingIntent = intent
-        if (reactContext.hasActiveReactInstance()) {
-            reactContext
+        if (reactApplicationContext.hasActiveReactInstance()) {
+            reactApplicationContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                 .emit("onNewShareIntent", null)
         }
