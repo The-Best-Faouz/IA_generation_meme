@@ -1,14 +1,13 @@
 import axios from 'axios';
 
-const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
-
 export const generateWithHuggingFace = async (
   type: 'text' | 'image' | 'prompt',
   content: string | Buffer,
   _country: string,
   culturalPrompt: string
 ): Promise<{ imageBuffer: Buffer; caption: string }> => {
-  if (!HUGGINGFACE_API_KEY) {
+  const apiKey = process.env.HUGGINGFACE_API_KEY;
+  if (!apiKey) {
     throw new Error('HUGGINGFACE_API_KEY non configuré');
   }
 
@@ -22,7 +21,7 @@ export const generateWithHuggingFace = async (
     'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2',
     { inputs: promptText },
     {
-      headers: { Authorization: `Bearer ${HUGGINGFACE_API_KEY}` },
+      headers: { Authorization: `Bearer ${apiKey}` },
       timeout: 8000,
     }
   );

@@ -1,14 +1,13 @@
 import axios from 'axios';
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
 export const generateWithOpenAI = async (
   type: 'text' | 'image' | 'prompt',
   content: string | Buffer,
   _country: string,
   culturalPrompt: string
 ): Promise<{ imageBuffer: Buffer; caption: string }> => {
-  if (!OPENAI_API_KEY) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
     throw new Error('OPENAI_API_KEY non configuré');
   }
 
@@ -27,7 +26,7 @@ export const generateWithOpenAI = async (
       temperature: 0.9,
     },
     {
-      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       timeout: 8000,
     }
   );
@@ -43,7 +42,7 @@ export const generateWithOpenAI = async (
       size: '512x512',
     },
     {
-      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       timeout: 15000,
     }
   );

@@ -7,12 +7,17 @@ import { StatusRemixerScreen } from '../screens/create/StatusRemixerScreen';
 import { PromptScreen } from '../screens/create/PromptScreen';
 import { FaceSwapScreen } from '../screens/create/FaceSwapScreen';
 import { GifEditorScreen } from '../screens/create/GifEditorScreen';
+import { StickerStudioScreen } from '../screens/create/StickerStudioScreen';
+import { ShareIntentHandlerScreen } from '../screens/create/ShareIntentHandlerScreen';
 import { PreviewScreen } from '../screens/preview/PreviewScreen';
 import { GalleryScreen } from '../screens/gallery/GalleryScreen';
 import { MemeDetailScreen } from '../screens/gallery/MemeDetailScreen';
 import { TelegramConnectScreen } from '../screens/telegram/TelegramConnectScreen';
 import { TelegramFeedScreen } from '../screens/telegram/TelegramFeedScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
+import { NotificationFeedScreen } from '../screens/home/NotificationFeedScreen';
+import { ChatImportScreen } from '../screens/home/ChatImportScreen';
+import { TabBar } from '../components/common/TabBar';
 
 export type AppStackParamList = {
   MainTabs: undefined;
@@ -21,10 +26,14 @@ export type AppStackParamList = {
   Prompt: undefined;
   FaceSwap: undefined;
   GifEditor: undefined;
+  StickerStudio: { imageUri?: string } | undefined;
+  ShareIntentHandler: undefined;
   Preview: { imageUrl: string; caption?: string; memeId?: string };
   MemeDetail: { id: string };
   TelegramConnect: undefined;
   TelegramFeed: undefined;
+  NotificationFeed: undefined;
+  ChatImport: undefined;
 };
 
 export type MainTabParamList = {
@@ -38,7 +47,9 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainTabs = () => {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      tabBar={(props) => <TabBar {...props} />}
+      screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Gallery" component={GalleryScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
@@ -55,10 +66,14 @@ export const AppNavigator = () => {
       <Stack.Screen name="Prompt" component={PromptScreen} />
       <Stack.Screen name="FaceSwap" component={FaceSwapScreen} />
       <Stack.Screen name="GifEditor" component={GifEditorScreen} />
+      <Stack.Screen name="StickerStudio" component={StickerStudioScreen} />
+      <Stack.Screen name="ShareIntentHandler" component={ShareIntentHandlerScreen} />
       <Stack.Screen name="Preview" component={PreviewScreen} />
       <Stack.Screen name="MemeDetail" component={MemeDetailScreen} />
       <Stack.Screen name="TelegramConnect" component={TelegramConnectScreen} />
       <Stack.Screen name="TelegramFeed" component={TelegramFeedScreen} />
+      <Stack.Screen name="NotificationFeed" component={NotificationFeedScreen} />
+      <Stack.Screen name="ChatImport" component={ChatImportScreen} />
     </Stack.Navigator>
   );
 };

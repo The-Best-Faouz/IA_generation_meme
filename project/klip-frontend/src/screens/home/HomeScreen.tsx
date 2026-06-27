@@ -1,46 +1,86 @@
 import React from 'react';
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
-import { Button } from '../../components/common/Button';
+import { AppHeader } from '../../components/common/AppHeader';
+import { AnimatedLogo } from '../../components/common/AnimatedLogo';
+import { Icon } from '../../components/common/Icon';
 import { COLORS } from '../../constants/colors';
 
 type HomeNavProp = NativeStackNavigationProp<AppStackParamList>;
 
-const MODES = [
-  { key: 'ContextReader', label: 'Context Reader', icon: '📝', desc: 'Texte → Mème' },
-  { key: 'StatusRemixer', label: 'Status Remixer', icon: '🖼️', desc: 'Image → Mème' },
-  { key: 'Prompt', label: 'Prompt libre', icon: '💡', desc: 'Décris ton mème' },
-  { key: 'FaceSwap', label: 'Face Swap', icon: '🎭', desc: 'Visage sur image' },
-  { key: 'GifEditor', label: 'GIF Editor', icon: '🎬', desc: 'Édite un GIF' },
-  { key: 'TelegramConnect', label: 'Telegram', icon: '✈️', desc: 'Lire & envoyer' },
+interface FeatureCard {
+  key: string;
+  label: string;
+  desc: string;
+  icon: 'chat' | 'image' | 'sparkle' | 'swap' | 'gif' | 'sticker' | 'telegram';
+  color: string;
+}
+
+const FEATURES: FeatureCard[] = [
+  { key: 'ContextReader', label: 'Context Reader', desc: 'Transforme un texte en meme', icon: 'chat', color: '#0ea5e9' },
+  { key: 'StatusRemixer', label: 'Status Remixer', desc: 'Ajoute du texte a une image', icon: 'image', color: '#8b5cf6' },
+  { key: 'Prompt', label: 'Prompt libre', desc: 'Decris le meme de tes reves', icon: 'sparkle', color: '#f59e0b' },
+  { key: 'FaceSwap', label: 'Face Swap', desc: 'Echange des visages', icon: 'swap', color: '#ec4899' },
+  { key: 'GifEditor', label: 'GIF Editor', desc: 'Edite un GIF a la voix', icon: 'gif', color: '#10b981' },
+  { key: 'StickerStudio', label: 'Sticker Studio', desc: 'Transforme un sticker', icon: 'sticker', color: '#06b6d4' },
+  { key: 'TelegramConnect', label: 'Telegram', desc: 'Connecte ton bot', icon: 'telegram', color: '#3b82f6' },
+];
+
+const QUICK_ACTIONS = [
+  { key: 'ShareIntentHandler', label: 'Contenu partage', desc: 'Depuis une autre app', icon: 'import' as const },
+  { key: 'NotificationFeed', label: 'Flux discussions', desc: 'Suggestions automatiques', icon: 'notification' as const },
+  { key: 'ChatImport', label: 'Import WhatsApp', desc: 'Analyse une conversation', icon: 'chat' as const },
 ];
 
 export const HomeScreen = () => {
   const navigation = useNavigation<HomeNavProp>();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>KLIP</Text>
-        <Text style={styles.slogan}>Clip it. Remix it. Send it.</Text>
+    <View style={styles.container}>
+      <AppHeader />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <AnimatedLogo />
+        </View>
+
+      <View style={styles.quickActionsRow}>
+        {QUICK_ACTIONS.map((action) => (
+          <TouchableOpacity
+            key={action.key}
+            style={styles.quickAction}
+            onPress={() => navigation.navigate(action.key as any)}
+            activeOpacity={0.7}>
+            <View style={styles.quickActionIcon}>
+              <Icon name={action.icon} size={20} color={COLORS.primary} />
+            </View>
+            <Text style={styles.quickActionLabel}>{action.label}</Text>
+            <Text style={styles.quickActionDesc}>{action.desc}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Choisir un mode</Text>
+      <Text style={styles.sectionTitle}>Creer un meme</Text>
 
-      <View style={styles.grid}>
-        {MODES.map((mode) => (
-          <Button
-            key={mode.key}
-            title={`${mode.icon}  ${mode.label}`}
-            onPress={() => navigation.navigate(mode.key as any)}
-            style={styles.modeButton}
-            textStyle={styles.modeButtonText}
-          />
+      <View style={styles.featuresGrid}>
+        {FEATURES.map((feature) => (
+          <TouchableOpacity
+            key={feature.key}
+            style={styles.featureCard}
+            onPress={() => navigation.navigate(feature.key as any)}
+            activeOpacity={0.7}>
+            <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
+              <Icon name={feature.icon} size={22} color={feature.color} />
+            </View>
+            <Text style={styles.featureLabel}>{feature.label}</Text>
+            <Text style={styles.featureDesc}>{feature.desc}</Text>
+            <View style={[styles.featureAccent, { backgroundColor: feature.color }]} />
+          </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
+    </View>
   );
 };
 
@@ -50,42 +90,95 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: 24,
+    padding: 20,
     paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
-    marginTop: 16,
+    marginBottom: 28,
+    marginTop: 12,
   },
-  title: {
-    fontSize: 40,
-    fontWeight: '900',
-    color: COLORS.primary,
-    letterSpacing: 4,
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 28,
   },
-  slogan: {
-    fontSize: 16,
-    color: COLORS.textMuted,
-    marginTop: 6,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-  grid: {
-    gap: 12,
-  },
-  modeButton: {
+  quickAction: {
+    flex: 1,
     backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
   },
-  modeButtonText: {
+  quickActionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  quickActionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  quickActionDesc: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    lineHeight: 15,
+  },
+  sectionTitle: {
     fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 14,
+    letterSpacing: 0.5,
+  },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  featureCard: {
+    width: '48%',
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  featureIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featureLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  featureDesc: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    lineHeight: 15,
+  },
+  featureAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2.5,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
 });

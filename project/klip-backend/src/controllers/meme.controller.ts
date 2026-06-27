@@ -16,25 +16,35 @@ export const generateFromText = async (req: AuthRequest, res: Response): Promise
 
     const result = await generateMeme('text', text, 'CM');
 
-    const cloudResult = await uploadToCloudinary(result.imageBuffer, 'meme');
+    let cloudResult;
+    try {
+      cloudResult = await uploadToCloudinary(result.imageBuffer, 'meme');
+    } catch {
+      const base64 = result.imageBuffer.toString('base64');
+      cloudResult = { url: `data:image/svg+xml;base64,${base64}`, webpUrl: '', publicId: `local_${Date.now()}` };
+    }
 
-    const meme = new Meme({
-      userId,
-      type: 'text',
-      inputText: text,
-      caption: result.caption,
-      imageUrl: cloudResult.url,
-      webpUrl: cloudResult.webpUrl,
-      cloudinaryPublicId: cloudResult.publicId,
-      aiProvider: result.provider,
-    });
-    await meme.save();
+    let memeId = null;
+    try {
+      const meme = new Meme({
+        userId,
+        type: 'text',
+        inputText: text,
+        caption: result.caption,
+        imageUrl: cloudResult.url,
+        webpUrl: cloudResult.webpUrl,
+        cloudinaryPublicId: cloudResult.publicId,
+        aiProvider: result.provider,
+      });
+      await meme.save();
+      memeId = meme._id;
+    } catch {}
 
     res.status(200).json({
       imageUrl: cloudResult.url,
       webpUrl: cloudResult.webpUrl,
       caption: result.caption,
-      memeId: meme._id,
+      memeId,
       aiProvider: result.provider,
     });
   } catch (error) {
@@ -57,27 +67,37 @@ export const generateFromImage = async (req: AuthRequest, res: Response): Promis
 
     const result = await generateMeme('image', imageBuffer, 'CM');
 
-    const cloudResult = await uploadToCloudinary(result.imageBuffer, 'meme');
+    let cloudResult;
+    try {
+      cloudResult = await uploadToCloudinary(result.imageBuffer, 'meme');
+    } catch {
+      const base64 = result.imageBuffer.toString('base64');
+      cloudResult = { url: `data:image/svg+xml;base64,${base64}`, webpUrl: '', publicId: `local_${Date.now()}` };
+    }
 
-    const meme = new Meme({
-      userId,
-      type: 'image',
-      inputText: 'Image uploadée par l\'utilisateur',
-      caption: result.caption,
-      imageUrl: cloudResult.url,
-      webpUrl: cloudResult.webpUrl,
-      cloudinaryPublicId: cloudResult.publicId,
-      aiProvider: result.provider,
-    });
-    await meme.save();
+    let memeId = null;
+    try {
+      const meme = new Meme({
+        userId,
+        type: 'image',
+        inputText: 'Image uploadée par l\'utilisateur',
+        caption: result.caption,
+        imageUrl: cloudResult.url,
+        webpUrl: cloudResult.webpUrl,
+        cloudinaryPublicId: cloudResult.publicId,
+        aiProvider: result.provider,
+      });
+      await meme.save();
+      memeId = meme._id;
+    } catch {}
 
-    fs.unlinkSync(req.file.path);
+    try { fs.unlinkSync(req.file.path); } catch {}
 
     res.status(200).json({
       imageUrl: cloudResult.url,
       webpUrl: cloudResult.webpUrl,
       caption: result.caption,
-      memeId: meme._id,
+      memeId,
       aiProvider: result.provider,
     });
   } catch (error) {
@@ -98,25 +118,35 @@ export const generateFromPrompt = async (req: AuthRequest, res: Response): Promi
 
     const result = await generateMeme('prompt', prompt, 'CM');
 
-    const cloudResult = await uploadToCloudinary(result.imageBuffer, 'meme');
+    let cloudResult;
+    try {
+      cloudResult = await uploadToCloudinary(result.imageBuffer, 'meme');
+    } catch {
+      const base64 = result.imageBuffer.toString('base64');
+      cloudResult = { url: `data:image/svg+xml;base64,${base64}`, webpUrl: '', publicId: `local_${Date.now()}` };
+    }
 
-    const meme = new Meme({
-      userId,
-      type: 'prompt',
-      inputText: prompt,
-      caption: result.caption,
-      imageUrl: cloudResult.url,
-      webpUrl: cloudResult.webpUrl,
-      cloudinaryPublicId: cloudResult.publicId,
-      aiProvider: result.provider,
-    });
-    await meme.save();
+    let memeId = null;
+    try {
+      const meme = new Meme({
+        userId,
+        type: 'prompt',
+        inputText: prompt,
+        caption: result.caption,
+        imageUrl: cloudResult.url,
+        webpUrl: cloudResult.webpUrl,
+        cloudinaryPublicId: cloudResult.publicId,
+        aiProvider: result.provider,
+      });
+      await meme.save();
+      memeId = meme._id;
+    } catch {}
 
     res.status(200).json({
       imageUrl: cloudResult.url,
       webpUrl: cloudResult.webpUrl,
       caption: result.caption,
-      memeId: meme._id,
+      memeId,
       aiProvider: result.provider,
     });
   } catch (error) {

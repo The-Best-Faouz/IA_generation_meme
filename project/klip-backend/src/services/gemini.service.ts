@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 export const generateWithGemini = async (
   type: 'text' | 'image' | 'prompt',
@@ -9,7 +8,8 @@ export const generateWithGemini = async (
   _country: string,
   culturalPrompt: string
 ): Promise<{ imageBuffer: Buffer; caption: string }> => {
-  if (!GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     throw new Error('GEMINI_API_KEY non configuré');
   }
 
@@ -20,7 +20,7 @@ export const generateWithGemini = async (
     : `Génère un mème à partir de cette description: ${content}. ${culturalPrompt}`;
 
   const response = await axios.post(
-    `${GEMINI_URL}?key=${GEMINI_API_KEY}`,
+    `${GEMINI_URL}?key=${apiKey}`,
     {
       contents: [{ parts: [{ text: promptText }] }],
       generationConfig: { maxOutputTokens: 1024, temperature: 0.9 },

@@ -3,8 +3,10 @@ import { View, StyleSheet, FlatList, Text, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
+import { AppHeader } from '../../components/common/AppHeader';
 import { MemeCard } from '../../components/meme/MemeCard';
 import { Loader } from '../../components/common/Loader';
+import { Icon } from '../../components/common/Icon';
 import api from '../../services/api.service';
 import { COLORS } from '../../constants/colors';
 
@@ -28,23 +30,19 @@ export const GalleryScreen = () => {
   const fetchMemes = async (pageNum: number = 1) => {
     try {
       const res = await api.get(`/gallery?page=${pageNum}&limit=20`);
+      const newMemes = res.data?.memes ?? [];
       if (pageNum === 1) {
-        setMemes(res.data.memes);
+        setMemes(newMemes);
       } else {
-        setMemes((prev) => [...prev, ...res.data.memes]);
+        setMemes((prev) => [...prev, ...newMemes]);
       }
-      setTotalPages(res.data.totalPages);
-    } catch {
-      // erreur silencieuse
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+      setTotalPages(res.data?.totalPages ?? 1);
+    } catch {}
+    setLoading(false);
+    setRefreshing(false);
   };
 
-  useEffect(() => {
-    fetchMemes();
-  }, []);
+  useEffect(() => { fetchMemes(); }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -61,15 +59,27 @@ export const GalleryScreen = () => {
   };
 
   if (loading && memes.length === 0) {
-    return <Loader message="Chargement de la galerie..." />;
+    return (
+      <View style={styles.container}>
+        <AppHeader />
+        <Loader />
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Ma Galerie</Text>
+      <AppHeader title="Ma Galerie" />
+      <View style={styles.subtitleRow}>
+        <Text style={styles.subtitle}>{memes.length} memes</Text>
+      </View>
       {memes.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Aucun mème dans la galerie</Text>
+          <View style={styles.emptyIcon}>
+            <Icon name="gallery" size={40} color={COLORS.surfaceLight} />
+          </View>
+          <Text style={styles.emptyText}>Aucun meme dans la galerie</Text>
+          <Text style={styles.emptyHint}>Genere ton premier meme depuis l accueil</Text>
         </View>
       ) : (
         <FlatList
@@ -83,7 +93,7 @@ export const GalleryScreen = () => {
               onPress={() => navigation.navigate('MemeDetail', { id: item.id })}
             />
           )}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           contentContainerStyle={styles.list}
@@ -98,25 +108,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.text,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 12,
+  subtitleRow: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
   list: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 24,
   },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   emptyText: {
     color: COLORS.textMuted,
     fontSize: 16,
+    fontWeight: '500',
+  },
+  emptyHint: {
+    color: COLORS.surfaceLight,
+    fontSize: 13,
+    marginTop: 6,
   },
 });

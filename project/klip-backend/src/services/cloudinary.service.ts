@@ -1,4 +1,4 @@
-import cloudinary from '../config/cloudinary';
+import { getCloudinary } from '../config/cloudinary';
 
 export interface CloudinaryResult {
   url: string;
@@ -6,7 +6,29 @@ export interface CloudinaryResult {
   publicId: string;
 }
 
+function isCloudinaryConfigured(): boolean {
+  return !!(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_CLOUD_NAME !== 'CHANGE_ME' &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_KEY !== 'CHANGE_ME' &&
+    process.env.CLOUDINARY_API_SECRET &&
+    process.env.CLOUDINARY_API_SECRET !== 'CHANGE_ME'
+  );
+}
+
 export const uploadToCloudinary = async (buffer: Buffer, folder: string): Promise<CloudinaryResult> => {
+  if (!isCloudinaryConfigured()) {
+    const base64 = buffer.toString('base64');
+    const mime = folder === 'gif' ? 'image/gif' : 'image/webp';
+    return {
+      url: `data:${mime};base64,${base64}`,
+      webpUrl: `data:${mime};base64,${base64}`,
+      publicId: `local_${Date.now()}`,
+    };
+  }
+
+  const cloudinary = getCloudinary();
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -33,6 +55,9 @@ export const uploadToCloudinary = async (buffer: Buffer, folder: string): Promis
 };
 
 export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
+  if (!isCloudinaryConfigured() || publicId.startsWith('local_')) return;
+
+  const cloudinary = getCloudinary();
   return new Promise((resolve, reject) => {
     cloudinary.uploader.destroy(publicId, (error, result) => {
       if (error) {

@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
-import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
+import { EyeIcon } from '../../components/common/EyeIcon';
+import { AnimatedLogo } from '../../components/common/AnimatedLogo';
+import { useAuth } from '../../hooks/useAuth';
 import { COLORS } from '../../constants/colors';
 
-type LoginNavProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const LoginScreen = () => {
-  const navigation = useNavigation<LoginNavProp>();
+  const navigation = useNavigation<NavProp>();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('djomgouemiguel@gmail.com');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       setError('Email et mot de passe requis');
       return;
     }
@@ -31,15 +33,14 @@ export const LoginScreen = () => {
       await login(email, password);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur de connexion');
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>KLIP</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.logoContainer}>
+        <AnimatedLogo />
         <Text style={styles.slogan}>Clip it. Remix it. Send it.</Text>
       </View>
 
@@ -49,35 +50,32 @@ export const LoginScreen = () => {
           placeholder="ton@email.com"
           value={email}
           onChangeText={setEmail}
-          autoCapitalize="none"
           keyboardType="email-address"
+          autoCapitalize="none"
         />
+
         <View style={styles.passwordContainer}>
           <Input
             label="Mot de passe"
-            placeholder="••••••••"
+            placeholder="Ton mot de passe"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
-            style={styles.passwordInput}
           />
-          <TouchableOpacity
-            style={styles.eyeButton}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+          <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)}>
+            <EyeIcon visible={showPassword} size={20} />
           </TouchableOpacity>
         </View>
 
         {error ? <ErrorMessage message={error} /> : null}
 
-        <Button title="Connexion" onPress={handleLogin} loading={loading} />
+        <Button title="Se connecter" onPress={handleLogin} loading={loading} />
 
-        <Button
-          title="Créer un compte"
-          variant="outline"
-          onPress={() => navigation.navigate('Register')}
-        />
+        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.registerLink}>
+          <Text style={styles.registerText}>
+            Pas encore de compte ? <Text style={styles.registerHighlight}>Creer un compte</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -85,43 +83,47 @@ export const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: COLORS.background,
-    padding: 24,
-    justifyContent: 'center',
   },
-  header: {
+  content: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  logoContainer: {
     alignItems: 'center',
+    marginTop: 60,
     marginBottom: 40,
   },
-  title: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: COLORS.primary,
-    letterSpacing: 4,
-  },
   slogan: {
-    fontSize: 16,
+    fontSize: 14,
     color: COLORS.textMuted,
-    marginTop: 8,
+    marginTop: 12,
+    letterSpacing: 1,
   },
   form: {
-    gap: 12,
+    flex: 1,
   },
   passwordContainer: {
     position: 'relative',
   },
-  passwordInput: {
-    paddingRight: 44,
-  },
-  eyeButton: {
+  eyeBtn: {
     position: 'absolute',
-    right: 12,
-    top: 28,
-    zIndex: 1,
-    padding: 6,
+    right: 14,
+    top: 36,
+    zIndex: 10,
+    padding: 4,
   },
-  eyeIcon: {
-    fontSize: 20,
+  registerLink: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  registerText: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+  },
+  registerHighlight: {
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });

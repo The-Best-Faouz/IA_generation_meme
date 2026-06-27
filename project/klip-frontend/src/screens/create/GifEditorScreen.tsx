@@ -4,10 +4,12 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
 import { AppStackParamList } from '../../navigation/AppNavigator';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { Button } from '../../components/common/Button';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { Loader } from '../../components/common/Loader';
 import { GifPreview } from '../../components/meme/GifPreview';
+import { Icon } from '../../components/common/Icon';
 import api from '../../services/api.service';
 import { COLORS } from '../../constants/colors';
 
@@ -31,7 +33,7 @@ export const GifEditorScreen = () => {
 
   const handleGenerate = async () => {
     if (!gifUri) {
-      setError('Importe un GIF d\'abord');
+      setError('Importe un GIF d abord');
       return;
     }
     setLoading(true);
@@ -40,7 +42,6 @@ export const GifEditorScreen = () => {
       const formData = new FormData();
       formData.append('gif', { uri: gifUri, type: 'image/gif', name: 'animation.gif' } as any);
       formData.append('audio', { uri: gifUri, type: 'audio/m4a', name: 'instruction.m4a' } as any);
-
       const res = await api.post('/meme/gif', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000,
@@ -51,40 +52,46 @@ export const GifEditorScreen = () => {
         memeId: res.data.memeId,
       });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erreur de génération');
+      setError(err.response?.data?.error || 'Erreur de generation');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return <Loader message="L'IA modifie ton GIF... (30-90s)" />;
-  }
+  if (loading) return <Loader message="L IA modifie ton GIF..." />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>GIF Editor</Text>
-      <Text style={styles.subtitle}>Importe un GIF et donne une instruction vocale</Text>
+    <View style={styles.container}>
+      <ScreenHeader title="GIF Editor" subtitle="Edite un GIF avec une commande vocale" />
+      <ScrollView contentContainerStyle={styles.content}>
+        <TouchableOpacity onPress={pickGif} style={styles.gifPicker} activeOpacity={0.8}>
+          {gifUri ? (
+            <GifPreview uri={gifUri} width={280} height={280} />
+          ) : (
+            <View style={styles.placeholder}>
+              <View style={styles.placeholderIcon}>
+                <Icon name="gif" size={32} color={COLORS.textMuted} />
+              </View>
+              <Text style={styles.placeholderText}>Choisir un GIF</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={pickGif} style={styles.gifPicker}>
-        {gifUri ? (
-          <GifPreview uri={gifUri} width={280} height={280} />
-        ) : (
-          <Text style={styles.placeholder}>+ Choisir un GIF</Text>
-        )}
-      </TouchableOpacity>
+        {transcription ? (
+          <View style={styles.transcriptionBox}>
+            <View style={styles.transcriptionHeader}>
+              <Icon name="mic" size={16} color={COLORS.primary} />
+              <Text style={styles.transcriptionLabel}>Transcription</Text>
+            </View>
+            <Text style={styles.transcriptionText}>{transcription}</Text>
+          </View>
+        ) : null}
 
-      {transcription ? (
-        <View style={styles.transcriptionBox}>
-          <Text style={styles.transcriptionLabel}>Transcription:</Text>
-          <Text style={styles.transcriptionText}>{transcription}</Text>
-        </View>
-      ) : null}
+        {error ? <ErrorMessage message={error} /> : null}
 
-      {error ? <ErrorMessage message={error} /> : null}
-
-      <Button title="Appliquer" onPress={handleGenerate} disabled={!gifUri} />
-    </ScrollView>
+        <Button title="Appliquer la modification" onPress={handleGenerate} disabled={!gifUri} />
+      </ScrollView>
+    </View>
   );
 };
 
@@ -94,19 +101,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: 24,
+    padding: 20,
     paddingBottom: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    marginBottom: 20,
   },
   gifPicker: {
     width: '100%',
@@ -122,22 +118,46 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   placeholder: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  placeholderIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
     color: COLORS.textMuted,
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: '500',
   },
   transcriptionBox: {
     backgroundColor: COLORS.surface,
-    borderRadius: 10,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  transcriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
   transcriptionLabel: {
     color: COLORS.textMuted,
     fontSize: 12,
-    marginBottom: 4,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   transcriptionText: {
     color: COLORS.text,
     fontSize: 14,
+    lineHeight: 20,
   },
 });

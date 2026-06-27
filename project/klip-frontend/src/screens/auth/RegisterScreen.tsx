@@ -1,43 +1,34 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
-import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
+import { EyeIcon } from '../../components/common/EyeIcon';
+import { CountryPicker } from '../../components/common/CountryPicker';
+import { AnimatedLogo } from '../../components/common/AnimatedLogo';
+import { Icon } from '../../components/common/Icon';
+import { useAuth } from '../../hooks/useAuth';
 import { COLORS } from '../../constants/colors';
 
-type RegisterNavProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
-
-const COUNTRIES = [
-  { code: 'CM', name: 'Cameroun' },
-  { code: 'FR', name: 'France' },
-  { code: 'US', name: 'États-Unis' },
-  { code: 'NG', name: 'Nigeria' },
-];
-
-const LANGUAGES = [
-  { code: 'fr', name: 'Français' },
-  { code: 'en', name: 'Anglais' },
-];
+type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const RegisterScreen = () => {
-  const navigation = useNavigation<RegisterNavProp>();
+  const navigation = useNavigation<NavProp>();
   const { register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [country, setCountry] = useState('CM');
-  const [language, setLanguage] = useState('fr');
-  const [error, setError] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<{ code: string; name: string; language: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email.trim() || !password.trim()) {
       setError('Tous les champs sont requis');
       return;
     }
@@ -45,22 +36,24 @@ export const RegisterScreen = () => {
       setError('Les mots de passe ne correspondent pas');
       return;
     }
+    if (password.length < 6) {
+      setError('Minimum 6 caracteres');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await register(email, password, country, language);
+      await register(email, password, selectedCountry?.code || 'FR', selectedCountry?.language || 'fr');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erreur lors de l\'inscription');
-    } finally {
-      setLoading(false);
+      setError(err.response?.data?.error || 'Erreur d\'inscription');
     }
+    setLoading(false);
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>KLIP</Text>
-        <Text style={styles.slogan}>Crée ton compte</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.logoContainer}>
+        <AnimatedLogo />
       </View>
 
       <View style={styles.form}>
@@ -69,72 +62,53 @@ export const RegisterScreen = () => {
           placeholder="ton@email.com"
           value={email}
           onChangeText={setEmail}
-          autoCapitalize="none"
           keyboardType="email-address"
+          autoCapitalize="none"
         />
+
         <View style={styles.passwordContainer}>
           <Input
             label="Mot de passe"
-            placeholder="••••••••"
+            placeholder="Minimum 6 caracteres"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
-            style={styles.passwordInput}
           />
-          <TouchableOpacity
-            style={styles.eyeButton}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+          <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)}>
+            <EyeIcon visible={showPassword} size={20} />
           </TouchableOpacity>
         </View>
+
         <View style={styles.passwordContainer}>
           <Input
             label="Confirmer le mot de passe"
-            placeholder="••••••••"
+            placeholder="Retape ton mot de passe"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            secureTextEntry={!showConfirmPassword}
-            style={styles.passwordInput}
+            secureTextEntry={!showConfirm}
           />
-          <TouchableOpacity
-            style={styles.eyeButton}
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            <Text style={styles.eyeIcon}>{showConfirmPassword ? '🙈' : '👁'}</Text>
+          <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowConfirm(!showConfirm)}>
+            <EyeIcon visible={showConfirm} size={20} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>Pays</Text>
-        <View style={styles.chipRow}>
-          {COUNTRIES.map((c) => (
-            <Button
-              key={c.code}
-              title={c.name}
-              variant={country === c.code ? 'primary' : 'outline'}
-              onPress={() => setCountry(c.code)}
-              style={styles.chip}
-            />
-          ))}
-        </View>
-
-        <Text style={styles.label}>Langue</Text>
-        <View style={styles.chipRow}>
-          {LANGUAGES.map((l) => (
-            <Button
-              key={l.code}
-              title={l.name}
-              variant={language === l.code ? 'primary' : 'outline'}
-              onPress={() => setLanguage(l.code)}
-              style={styles.chip}
-            />
-          ))}
+        <View style={styles.countrySection}>
+          <Text style={styles.countryLabel}>Pays</Text>
+          <CountryPicker
+            value={selectedCountry?.code || 'FR'}
+            onChange={(country) => setSelectedCountry(country)}
+          />
         </View>
 
         {error ? <ErrorMessage message={error} /> : null}
 
-        <Button title="S'inscrire" onPress={handleRegister} loading={loading} />
-        <Button title="Déjà un compte ?" variant="outline" onPress={() => navigation.navigate('Login')} />
+        <Button title="Creer mon compte" onPress={handleRegister} loading={loading} />
+
+        <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
+          <Text style={styles.loginText}>
+            Deja un compte ? <Text style={styles.loginHighlight}>Se connecter</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -142,60 +116,50 @@ export const RegisterScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: COLORS.background,
-    padding: 24,
-    justifyContent: 'center',
   },
-  header: {
+  content: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  logoContainer: {
     alignItems: 'center',
+    marginTop: 40,
     marginBottom: 32,
   },
-  title: {
-    fontSize: 40,
-    fontWeight: '900',
-    color: COLORS.primary,
-    letterSpacing: 4,
-  },
-  slogan: {
-    fontSize: 16,
-    color: COLORS.textMuted,
-    marginTop: 8,
-  },
   form: {
-    gap: 12,
+    flex: 1,
   },
-  label: {
+  passwordContainer: {
+    position: 'relative',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 14,
+    top: 36,
+    zIndex: 10,
+    padding: 4,
+  },
+  countrySection: {
+    marginBottom: 16,
+  },
+  countryLabel: {
     color: COLORS.text,
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 6,
   },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
+  loginLink: {
+    alignItems: 'center',
+    marginTop: 20,
   },
-  chip: {
-    minHeight: 36,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  loginText: {
+    color: COLORS.textMuted,
+    fontSize: 14,
   },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: 44,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 12,
-    top: 28,
-    zIndex: 1,
-    padding: 6,
-  },
-  eyeIcon: {
-    fontSize: 20,
+  loginHighlight: {
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });

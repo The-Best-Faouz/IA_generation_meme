@@ -3,9 +3,11 @@ import { View, StyleSheet, TextInput, ScrollView, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { Button } from '../../components/common/Button';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { Loader } from '../../components/common/Loader';
+import { Icon } from '../../components/common/Icon';
 import api from '../../services/api.service';
 import { COLORS } from '../../constants/colors';
 
@@ -32,36 +34,42 @@ export const ContextReaderScreen = () => {
         memeId: res.data.memeId,
       });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erreur de génération');
+      setError(err.response?.data?.error || 'Erreur de generation');
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return <Loader message="L'IA génère ton mème..." />;
+    return <Loader message="L IA genere ton meme..." />;
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Context Reader</Text>
-      <Text style={styles.subtitle}>Colle un extrait de conversation</Text>
+    <View style={styles.container}>
+      <ScreenHeader title="Context Reader" subtitle="Transforme un texte en meme" />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.inputCard}>
+          <View style={styles.inputHeader}>
+            <Icon name="chat" size={18} color={COLORS.primary} />
+            <Text style={styles.inputLabel}>Texte de la conversation</Text>
+          </View>
+          <TextInput
+            style={styles.textArea}
+            multiline
+            numberOfLines={8}
+            placeholder="Colle ici ton texte WhatsApp ou Telegram..."
+            placeholderTextColor={COLORS.textMuted}
+            value={text}
+            onChangeText={setText}
+            textAlignVertical="top"
+          />
+        </View>
 
-      <TextInput
-        style={styles.textArea}
-        multiline
-        numberOfLines={8}
-        placeholder="Colle ici ton texte WhatsApp/Telegram..."
-        placeholderTextColor={COLORS.textMuted}
-        value={text}
-        onChangeText={setText}
-        textAlignVertical="top"
-      />
+        {error ? <ErrorMessage message={error} /> : null}
 
-      {error ? <ErrorMessage message={error} /> : null}
-
-      <Button title="Générer le mème" onPress={handleGenerate} />
-    </ScrollView>
+        <Button title="Generer le meme" onPress={handleGenerate} />
+      </ScrollView>
+    </View>
   );
 };
 
@@ -71,29 +79,34 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: 24,
+    padding: 20,
     paddingBottom: 40,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    marginBottom: 20,
-  },
-  textArea: {
+  inputCard: {
     backgroundColor: COLORS.surface,
-    color: COLORS.text,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
-    fontSize: 16,
-    minHeight: 160,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: 16,
+  },
+  inputHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  textArea: {
+    color: COLORS.text,
+    fontSize: 15,
+    minHeight: 160,
+    lineHeight: 22,
   },
 });

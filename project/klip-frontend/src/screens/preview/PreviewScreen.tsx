@@ -3,8 +3,10 @@ import { View, StyleSheet, Image, ScrollView, Text, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { Button } from '../../components/common/Button';
 import { TextOverlay } from '../../components/meme/TextOverlay';
+import { Icon } from '../../components/common/Icon';
 import Share from 'react-native-share';
 import { COLORS } from '../../constants/colors';
 
@@ -18,39 +20,47 @@ type RouteParams = {
 export const PreviewScreen = () => {
   const navigation = useNavigation<NavProp>();
   const route = useRoute();
-  const { imageUrl, caption } = route.params as RouteParams;
+  const params = (route.params ?? {}) as RouteParams;
+  const { imageUrl = '', caption } = params;
 
   const handleShare = async () => {
     try {
       await Share.open({
         url: imageUrl,
-        message: caption || 'Regarde ce mème généré avec KLIP !',
+        message: caption || 'Regarde ce meme genere avec KLIP !',
       });
-    } catch {
-      // utilisateur a annulé
-    }
+    } catch {}
   };
 
   const handleSave = () => {
-    Alert.alert('Sauvegardé', 'Sticker sauvegardé dans la galerie !');
+    Alert.alert('Sauvegarde', 'Sticker sauvegarde dans la galerie !');
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.imageContainer}>
-        <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-        {caption ? <TextOverlay text={caption} position="bottom" /> : null}
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Apercu" subtitle={caption ? caption.slice(0, 40) + '...' : undefined} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
+          {caption ? <TextOverlay text={caption} position="bottom" /> : null}
+        </View>
 
-      {caption ? (
-        <Text style={styles.caption}>{caption}</Text>
-      ) : null}
+        {caption && (
+          <View style={styles.captionBox}>
+            <View style={styles.captionHeader}>
+              <Icon name="chat" size={14} color={COLORS.primary} />
+              <Text style={styles.captionLabel}>Legende</Text>
+            </View>
+            <Text style={styles.captionText}>{caption}</Text>
+          </View>
+        )}
 
-      <View style={styles.actions}>
-        <Button title="Partager" onPress={handleShare} variant="secondary" />
-        <Button title="Sauvegarder" onPress={handleSave} />
-      </View>
-    </ScrollView>
+        <View style={styles.actions}>
+          <Button title="Partager" onPress={handleShare} variant="secondary" />
+          <Button title="Sauvegarder dans la galerie" onPress={handleSave} />
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -60,7 +70,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: 24,
+    padding: 20,
     paddingBottom: 40,
   },
   imageContainer: {
@@ -75,11 +85,31 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  caption: {
-    color: COLORS.text,
-    fontSize: 16,
-    textAlign: 'center',
+  captionBox: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  captionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  captionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  captionText: {
+    color: COLORS.text,
+    fontSize: 14,
+    lineHeight: 20,
     fontStyle: 'italic',
   },
   actions: {

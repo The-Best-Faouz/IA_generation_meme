@@ -1,12 +1,23 @@
 import { generateWithGemini } from './gemini.service';
 import { generateWithOpenAI } from './openai.service';
 import { generateWithHuggingFace } from './huggingface.service';
+import { generateWithGroq } from './groq-text.service';
 
 export interface MemeResult {
   imageBuffer: Buffer;
   caption: string;
   provider: string;
 }
+
+const providers: Array<{
+  name: string;
+  generate: typeof generateWithGroq;
+}> = [
+  { name: 'groq', generate: generateWithGroq },
+  { name: 'gemini', generate: generateWithGemini },
+  { name: 'openai', generate: generateWithOpenAI },
+  { name: 'huggingface', generate: generateWithHuggingFace },
+];
 
 export const generateMeme = async (
   type: 'text' | 'image' | 'prompt',
@@ -15,26 +26,15 @@ export const generateMeme = async (
 ): Promise<MemeResult> => {
   const culturalPrompt = `Génère un contenu humoristique adapté à la culture de : ${country}. Si le pays est CM (Cameroun), intègre des références locales (noms populaires, expressions locales, contexte africain) si pertinent.`;
 
-  try {
-    const result = await generateWithGemini(type, content, country, culturalPrompt);
-    console.log('provider: gemini');
-    return { ...result, provider: 'gemini' };
-  } catch (err: any) {
-    console.log('Gemini failed:', err.message);
+  for (const provider of providers) {
     try {
-      const result = await generateWithOpenAI(type, content, country, culturalPrompt);
-      console.log('provider: openai');
-      return { ...result, provider: 'openai' };
-    } catch (err2: any) {
-      console.log('OpenAI failed:', err2.message);
-      try {
-        const result = await generateWithHuggingFace(type, content, country, culturalPrompt);
-        console.log('provider: huggingface');
-        return { ...result, provider: 'huggingface' };
-      } catch (err3: any) {
-        console.log('Tous les providers ont échoué');
-        throw new Error('Tous les providers IA ont échoué');
-      }
+      const result = await provider.generate(type, content, country, culturalPrompt);
+      console.log(`provider: ${provider.name}`);
+      return { ...result, provider: provider.name };
+    } catch (err: any) {
+      console.log(`${provider.name} failed:`, err.message);
     }
   }
+
+  throw new Error('Tous les providers IA ont échoué');
 };

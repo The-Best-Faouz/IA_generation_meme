@@ -12,6 +12,10 @@ import gifRoutes from './routes/gif.routes';
 import galleryRoutes from './routes/gallery.routes';
 import userRoutes from './routes/user.routes';
 import telegramRoutes from './routes/telegram.routes';
+import stickerRoutes from './routes/sticker.routes';
+import gifEditorRoutes from './routes/gif-editor.routes';
+import notificationRoutes from './routes/notification.routes';
+import chatRoutes from './routes/chat.routes';
 
 dotenv.config();
 
@@ -43,6 +47,10 @@ app.use('/meme', gifRoutes);
 app.use('/gallery', galleryRoutes);
 app.use('/user', userRoutes);
 app.use('/telegram', telegramRoutes);
+app.use('/sticker', stickerRoutes);
+app.use('/gif-editor', gifEditorRoutes);
+app.use('/notification', notificationRoutes);
+app.use('/chat', chatRoutes);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

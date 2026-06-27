@@ -3,9 +3,11 @@ import { View, StyleSheet, TextInput, ScrollView, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { Button } from '../../components/common/Button';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { Loader } from '../../components/common/Loader';
+import { Icon } from '../../components/common/Icon';
 import api from '../../services/api.service';
 import { COLORS } from '../../constants/colors';
 
@@ -19,7 +21,7 @@ export const PromptScreen = () => {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
-      setError('Décris le mème que tu veux');
+      setError('Decris le meme que tu veux');
       return;
     }
     setLoading(true);
@@ -32,36 +34,40 @@ export const PromptScreen = () => {
         memeId: res.data.memeId,
       });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erreur de génération');
+      setError(err.response?.data?.error || 'Erreur de generation');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return <Loader message="L'IA dessine ton mème..." />;
-  }
+  if (loading) return <Loader message="L IA dessine ton meme..." />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Prompt libre</Text>
-      <Text style={styles.subtitle}>Décris le mème de tes rêves</Text>
+    <View style={styles.container}>
+      <ScreenHeader title="Prompt libre" subtitle="Decris le meme de tes reves" />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.inputCard}>
+          <View style={styles.inputHeader}>
+            <Icon name="sparkle" size={18} color={COLORS.warning} />
+            <Text style={styles.inputLabel}>Description</Text>
+          </View>
+          <TextInput
+            style={styles.textArea}
+            multiline
+            numberOfLines={6}
+            placeholder="Ex: un chat qui code a 3h du matin en pyjama..."
+            placeholderTextColor={COLORS.textMuted}
+            value={prompt}
+            onChangeText={setPrompt}
+            textAlignVertical="top"
+          />
+        </View>
 
-      <TextInput
-        style={styles.textArea}
-        multiline
-        numberOfLines={6}
-        placeholder="Ex: un chat qui code à 3h du matin en pyjama..."
-        placeholderTextColor={COLORS.textMuted}
-        value={prompt}
-        onChangeText={setPrompt}
-        textAlignVertical="top"
-      />
+        {error ? <ErrorMessage message={error} /> : null}
 
-      {error ? <ErrorMessage message={error} /> : null}
-
-      <Button title="Générer le mème" onPress={handleGenerate} />
-    </ScrollView>
+        <Button title="Generer le meme" onPress={handleGenerate} />
+      </ScrollView>
+    </View>
   );
 };
 
@@ -71,29 +77,34 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: 24,
+    padding: 20,
     paddingBottom: 40,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    marginBottom: 20,
-  },
-  textArea: {
+  inputCard: {
     backgroundColor: COLORS.surface,
-    color: COLORS.text,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
-    fontSize: 16,
-    minHeight: 140,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: 16,
+  },
+  inputHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  textArea: {
+    color: COLORS.text,
+    fontSize: 15,
+    minHeight: 140,
+    lineHeight: 22,
   },
 });
