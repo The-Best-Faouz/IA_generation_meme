@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
@@ -28,14 +28,21 @@ export const RegisterScreen = () => {
   const { register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [country, setCountry] = useState('CM');
   const [language, setLanguage] = useState('fr');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email || !password) {
+    if (!email || !password || !confirmPassword) {
       setError('Tous les champs sont requis');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas');
       return;
     }
     setLoading(true);
@@ -65,13 +72,38 @@ export const RegisterScreen = () => {
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <Input
-          label="Mot de passe"
-          placeholder="••••••••"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.passwordContainer}>
+          <Input
+            label="Mot de passe"
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            style={styles.passwordInput}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.passwordContainer}>
+          <Input
+            label="Confirmer le mot de passe"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirmPassword}
+            style={styles.passwordInput}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            <Text style={styles.eyeIcon}>{showConfirmPassword ? '🙈' : '👁'}</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.label}>Pays</Text>
         <View style={styles.chipRow}>
@@ -149,5 +181,21 @@ const styles = StyleSheet.create({
     minHeight: 36,
     paddingVertical: 8,
     paddingHorizontal: 16,
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 44,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    top: 28,
+    zIndex: 1,
+    padding: 6,
+  },
+  eyeIcon: {
+    fontSize: 20,
   },
 });
