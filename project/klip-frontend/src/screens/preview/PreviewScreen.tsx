@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, StyleSheet, Image, ScrollView, Text, Alert } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, StyleSheet, Image, ScrollView, Text, Alert, TextInput } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { Button } from '../../components/common/Button';
-import { TextOverlay } from '../../components/meme/TextOverlay';
 import { Icon } from '../../components/common/Icon';
 import Share from 'react-native-share';
+import ViewShot from 'react-native-view-shot';
 import { COLORS } from '../../constants/colors';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -21,43 +21,61 @@ export const PreviewScreen = () => {
   const navigation = useNavigation<NavProp>();
   const route = useRoute();
   const params = (route.params ?? {}) as RouteParams;
-  const { imageUrl = '', caption } = params;
+  const { imageUrl = '', caption = '' } = params;
+  
+  const [editableCaption, setEditableCaption] = useState(caption);
+  const viewShotRef = useRef<ViewShot>(null);
 
   const handleShare = async () => {
     try {
-      await Share.open({
-        url: imageUrl,
-        message: caption || 'Regarde ce meme genere avec KLIP !',
-      });
-    } catch {}
+      if (viewShotRef.current && viewShotRef.current.capture) {
+        const uri = await viewShotRef.current.capture();
+        await Share.open({
+          url: uri,
+          message: 'Regarde ce mème créé avec KLIP !',
+        });
+      }
+    } catch (err: any) {
+      if (err.message !== 'User did not share') {
+        Alert.alert('Erreur', 'Impossible de partager ce mème.');
+      }
+    }
   };
 
   const handleSave = () => {
-    Alert.alert('Sauvegarde', 'Sticker sauvegarde dans la galerie !');
+    Alert.alert('Sauvegarde', 'Mème sauvegardé dans la galerie !');
   };
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Apercu" subtitle={caption ? caption.slice(0, 40) + '...' : undefined} />
+      <ScreenHeader title="Éditeur de Mème" subtitle="Modifie le texte avant de partager" />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.imageContainer}>
+        
+        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1.0 }} style={styles.canvas}>
           <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-          {caption ? <TextOverlay text={caption} position="bottom" /> : null}
+          
+          <View style={styles.textOverlay}>
+            <TextInput
+              style={styles.textInput}
+              value={editableCaption}
+              onChangeText={setEditableCaption}
+              multiline
+              placeholder="Ajoute ton texte ici..."
+              placeholderTextColor="rgba(255,255,255,0.6)"
+            />
+          </View>
+        </ViewShot>
+
+        <View style={styles.instructionsBox}>
+          <Icon name="edit" size={16} color={COLORS.primary} />
+          <Text style={styles.instructionsText}>
+            Astuce : Touche le texte sur l'image pour le modifier.
+          </Text>
         </View>
 
-        {caption && (
-          <View style={styles.captionBox}>
-            <View style={styles.captionHeader}>
-              <Icon name="chat" size={14} color={COLORS.primary} />
-              <Text style={styles.captionLabel}>Legende</Text>
-            </View>
-            <Text style={styles.captionText}>{caption}</Text>
-          </View>
-        )}
-
         <View style={styles.actions}>
-          <Button title="Partager" onPress={handleShare} variant="secondary" />
-          <Button title="Sauvegarder dans la galerie" onPress={handleSave} />
+          <Button title="Partager sur les réseaux" onPress={handleShare} variant="secondary" />
+          <Button title="Terminer et Sauvegarder" onPress={handleSave} />
         </View>
       </ScrollView>
     </View>
@@ -73,44 +91,51 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  imageContainer: {
+  canvas: {
     width: '100%',
     aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: COLORS.surface,
     marginBottom: 16,
+    position: 'relative',
   },
   image: {
     width: '100%',
     height: '100%',
   },
-  captionBox: {
+  textOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 12,
+  },
+  textInput: {
+    color: COLORS.white,
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  instructionsBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 20,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 24,
+    gap: 10,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  captionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  captionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+  instructionsText: {
     color: COLORS.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  captionText: {
-    color: COLORS.text,
-    fontSize: 14,
-    lineHeight: 20,
-    fontStyle: 'italic',
+    fontSize: 13,
+    flex: 1,
   },
   actions: {
     gap: 12,
