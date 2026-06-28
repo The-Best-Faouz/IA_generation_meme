@@ -15,33 +15,45 @@ export const faceSwap = async (req: AuthRequest, res: Response): Promise<void> =
       return;
     }
 
-    const sourceBuffer = fs.readFileSync(files.source[0].path);
-    const faceBuffer = fs.readFileSync(files.face[0].path);
+    try {
+      const sourceBuffer = fs.readFileSync(files.source[0].path);
+      const faceBuffer = fs.readFileSync(files.face[0].path);
 
-    const resultBuffer = await runFaceSwap(sourceBuffer, faceBuffer);
+      const resultBuffer = await runFaceSwap(sourceBuffer, faceBuffer);
 
-    const cloudResult = await uploadToCloudinary(resultBuffer, 'faceswap');
+      const cloudResult = await uploadToCloudinary(resultBuffer, 'faceswap');
 
-    const meme = new Meme({
-      userId,
-      type: 'faceswap',
-      inputText: 'Face swap',
-      caption: 'Face swap généré',
-      imageUrl: cloudResult.url,
-      webpUrl: cloudResult.webpUrl,
-      cloudinaryPublicId: cloudResult.publicId,
-      aiProvider: 'replicate',
-    });
-    await meme.save();
+      let memeId = null;
+      try {
+        const meme = new Meme({
+          userId,
+          type: 'faceswap',
+          inputText: 'Face swap',
+          caption: 'Face swap généré',
+          imageUrl: cloudResult.url,
+          webpUrl: cloudResult.webpUrl,
+          cloudinaryPublicId: cloudResult.publicId,
+          aiProvider: 'replicate',
+        });
+        await meme.save();
+        memeId = meme._id;
+      } catch (dbErr) {
+        console.error('Failed to save faceswap meme to DB:', dbErr);
+      }
 
-    fs.unlinkSync(files.source[0].path);
-    fs.unlinkSync(files.face[0].path);
-
-    res.status(200).json({
-      imageUrl: cloudResult.url,
-      webpUrl: cloudResult.webpUrl,
-      memeId: meme._id,
-    });
+      res.status(200).json({
+        imageUrl: cloudResult.url,
+        webpUrl: cloudResult.webpUrl,
+        memeId,
+      });
+    } finally {
+      if (files?.source?.[0]?.path) {
+        try { fs.unlinkSync(files.source[0].path); } catch (e) { console.error('Failed to unlink source:', e); }
+      }
+      if (files?.face?.[0]?.path) {
+        try { fs.unlinkSync(files.face[0].path); } catch (e) { console.error('Failed to unlink face:', e); }
+      }
+    }
   } catch (error) {
     console.error('faceSwap error:', error);
     res.status(503).json({ error: 'Service Face Swap temporairement indisponible' });

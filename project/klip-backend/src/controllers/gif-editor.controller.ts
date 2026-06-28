@@ -45,10 +45,18 @@ export const voiceEditGif = async (req: Request, res: Response) => {
 Décris précisément ce qu'il faut modifier sur chaque frame du GIF. Sois très spécifique.`;
     const aiResultCaption = await generateCaptionWithGemini('image', file.buffer, language || 'FR', aiPrompt);
 
-    const maxFrames = Math.min(frames.length, 20);
-    for (let i = 0; i < maxFrames; i++) {
-      const outputFrame = path.join(workDir, `edited_${String(i).padStart(4, '0')}.png`);
-      await editFrameWithAi(frames[i].path, voiceCommand, outputFrame);
+    const maxFrames = frames.length; // We process all frames now
+    const batchSize = 5; // Process 5 frames in parallel to avoid rate limits
+
+    for (let i = 0; i < maxFrames; i += batchSize) {
+      const batch = frames.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (frame, index) => {
+          const globalIndex = i + index;
+          const outputFrame = path.join(workDir, `edited_${String(globalIndex).padStart(4, '0')}.png`);
+          await editFrameWithAi(frame.path, voiceCommand, outputFrame);
+        })
+      );
     }
 
     const editedPaths: string[] = [];
