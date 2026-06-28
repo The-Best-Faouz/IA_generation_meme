@@ -75,8 +75,13 @@ app.get('/health', (_req, res) => res.json({
   timestamp: new Date().toISOString(),
 }));
 
+import { startAgenda } from './services/agenda.service';
+
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connecté'))
+  .then(() => {
+    console.log('MongoDB connecté');
+    startAgenda().catch(console.error);
+  })
   .catch((err) => console.error('Erreur MongoDB:', err));
 
 const server = app.listen(PORT, '0.0.0.0', () => {

@@ -21,6 +21,8 @@ const captionProviders: Array<{
   { name: 'huggingface', generate: generateCaptionWithHuggingFace },
 ];
 
+import { PromptCache } from '../models/PromptCache.model';
+
 export const generateMeme = async (
   type: 'text' | 'image' | 'prompt',
   content: string | Buffer,
@@ -28,30 +30,53 @@ export const generateMeme = async (
 ): Promise<MemeResult> => {
   const culturalPrompt = `Génère un contenu humoristique adapté à la culture de : ${country}. Si le pays est CM (Cameroun), intègre des références locales (noms populaires, expressions locales, contexte africain) si pertinent.`;
 
-  const promises = captionProviders.map(async (provider) => {
-    try {
-      const caption = await provider.generate(type, content, country, culturalPrompt);
-      if (caption) {
-        return { caption, provider: provider.name };
-      }
-      throw new Error('Empty caption');
-    } catch (err: any) {
-      console.log(`${provider.name} caption failed:`, err.message);
-      throw err;
-    }
-  });
+  const isCacheable = (type === 'text' || type === 'prompt') && typeof content === 'string';
+  const cacheKey = isCacheable ? `${type}_${country}_${content.trim().toLowerCase()}` : null;
 
   let bestCaption = '';
   let usedProvider = '';
 
-  try {
-    const result = await Promise.any(promises);
-    bestCaption = result.caption;
-    usedProvider = result.provider;
-  } catch (err) {
-    console.log('All caption providers failed');
-    bestCaption = 'Mème généré par KLIP';
-    usedProvider = 'fallback';
+  if (cacheKey) {
+    const cached = await PromptCache.findOne({ promptText: cacheKey });
+    if (cached) {
+      console.log('Cache hit for caption:', cacheKey);
+      bestCaption = cached.caption;
+      usedProvider = cached.provider + ' (cached)';
+    }
+  }
+
+  if (!bestCaption) {
+    const promises = captionProviders.map(async (provider) => {
+      try {
+        const caption = await provider.generate(type, content, country, culturalPrompt);
+        if (caption) {
+          return { caption, provider: provider.name };
+        }
+        throw new Error('Empty caption');
+      } catch (err: any) {
+        console.log(`${provider.name} caption failed:`, err.message);
+        throw err;
+      }
+    });
+
+    try {
+      const result = await Promise.any(promises);
+      bestCaption = result.caption;
+      usedProvider = result.provider;
+
+      if (cacheKey && bestCaption !== 'Mème généré par KLIP') {
+        PromptCache.create({
+          promptText: cacheKey,
+          type,
+          caption: bestCaption,
+          provider: usedProvider
+        }).catch(e => console.log('Cache save failed', e.message));
+      }
+    } catch (err) {
+      console.log('All caption providers failed');
+      bestCaption = 'Mème généré par KLIP';
+      usedProvider = 'fallback';
+    }
   }
 
   try {
