@@ -79,8 +79,8 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('MongoDB connecté'))
   .catch((err) => console.error('Erreur MongoDB:', err));
 
-const server = app.listen(PORT, () => {
-  console.log(`Serveur KLIP démarré sur le port ${PORT} (${process.env.PORT || 'default'})`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Serveur KLIP démarré sur le port ${PORT}`);
   if (RENDER_URL) startKeepAlive();
 });
 server.on('error', (err: Error) => {
