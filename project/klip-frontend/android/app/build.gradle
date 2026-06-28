@@ -18,7 +18,7 @@ android {
     namespace "com.klipapp"
     defaultConfig {
         applicationId "com.klipapp"
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"

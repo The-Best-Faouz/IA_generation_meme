@@ -62,7 +62,7 @@ export const LoginScreen = () => {
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="always">
         <View style={styles.logoContainer}>
           <AnimatedLogo />
           <Text style={styles.slogan}>Clip it. Remix it. Send it.</Text>
