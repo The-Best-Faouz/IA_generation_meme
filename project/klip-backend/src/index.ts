@@ -19,6 +19,14 @@ import gifEditorRoutes from './routes/gif-editor.routes';
 import notificationRoutes from './routes/notification.routes';
 import chatRoutes from './routes/chat.routes';
 
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+});
+
 dotenv.config();
 
 const app = express();
