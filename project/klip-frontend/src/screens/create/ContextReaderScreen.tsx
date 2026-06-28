@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, ScrollView, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
@@ -8,26 +8,45 @@ import { Button } from '../../components/common/Button';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { Loader } from '../../components/common/Loader';
 import { Icon } from '../../components/common/Icon';
+import { Input } from '../../components/common/Input';
 import api from '../../services/api.service';
 import { COLORS } from '../../constants/colors';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
+type Tone = 'sarcastique' | 'absurde' | 'dramatique' | 'calme';
+
+const TONES: Tone[] = ['sarcastique', 'absurde', 'dramatique', 'calme'];
+
 export const ContextReaderScreen = () => {
   const navigation = useNavigation<NavProp>();
-  const [text, setText] = useState('');
+  const [seedText, setSeedText] = useState('');
+  const [situation, setSituation] = useState('');
+  const [people, setPeople] = useState('');
+  const [extra, setExtra] = useState('');
+  const [tone, setTone] = useState<Tone>('sarcastique');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleGenerate = async () => {
-    if (!text.trim()) {
-      setError('Colle un texte de conversation');
+    if (!seedText.trim()) {
+      setError('Ajoute au moins un mot ou une phrase de depart');
       return;
     }
+
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/meme/text', { text });
+      const res = await api.post('/meme/text', {
+        text: seedText,
+        context: {
+          situation,
+          people,
+          tone,
+          extra,
+          audience: 'public francophone',
+        },
+      });
       navigation.navigate('Preview', {
         imageUrl: res.data.imageUrl,
         caption: res.data.caption,
@@ -46,22 +65,66 @@ export const ContextReaderScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Context Reader" subtitle="Transforme un texte en meme" />
+      <ScreenHeader title="Context Reader" subtitle="Ajoute du contexte au texte brut" />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.inputCard}>
-          <View style={styles.inputHeader}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
             <Icon name="chat" size={18} color={COLORS.primary} />
-            <Text style={styles.inputLabel}>Texte de la conversation</Text>
+            <Text style={styles.cardTitle}>Texte de depart</Text>
           </View>
-          <TextInput
-            style={styles.textArea}
+          <Input
+            value={seedText}
+            onChangeText={setSeedText}
+            placeholder="Ex: lundi matin"
             multiline
-            numberOfLines={8}
-            placeholder="Colle ici ton texte WhatsApp ou Telegram..."
-            placeholderTextColor={COLORS.textMuted}
-            value={text}
-            onChangeText={setText}
-            textAlignVertical="top"
+            numberOfLines={2}
+            style={styles.seedInput}
+          />
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Icon name="sparkle" size={18} color={COLORS.warning} />
+            <Text style={styles.cardTitle}>Contexte rapide</Text>
+          </View>
+
+          <Input
+            label="Situation"
+            value={situation}
+            onChangeText={setSituation}
+            placeholder="Ex: fin de mois, batterie a 2%"
+          />
+          <Input
+            label="Qui est concerne"
+            value={people}
+            onChangeText={setPeople}
+            placeholder="Ex: moi, le chef, mon ami"
+          />
+
+          <Text style={styles.sectionLabel}>Ton du meme</Text>
+          <View style={styles.toneRow}>
+            {TONES.map((item) => (
+              <TouchableOpacity
+                key={item}
+                style={[styles.toneChip, tone === item && styles.toneChipActive]}
+                onPress={() => setTone(item)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.toneChipText, tone === item && styles.toneChipTextActive]}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Input
+            label="Details supplementaires"
+            value={extra}
+            onChangeText={setExtra}
+            placeholder="Ex: reaction exageree, reference locale, ironie"
+            multiline
+            numberOfLines={3}
+            style={styles.extraInput}
           />
         </View>
 
@@ -82,7 +145,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  inputCard: {
+  card: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
     padding: 16,
@@ -90,23 +153,61 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     marginBottom: 16,
   },
-  inputHeader: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 12,
   },
-  inputLabel: {
+  cardTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  textArea: {
-    color: COLORS.text,
-    fontSize: 15,
-    minHeight: 160,
-    lineHeight: 22,
+  seedInput: {
+    minHeight: 64,
+    textAlignVertical: 'top',
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  toneRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  toneChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: COLORS.surfaceLight,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  toneChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  toneChipText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+  },
+  toneChipTextActive: {
+    color: COLORS.white,
+  },
+  extraInput: {
+    minHeight: 96,
+    textAlignVertical: 'top',
   },
 });

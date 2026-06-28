@@ -1,12 +1,34 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { Meme } from '../models/Meme.model';
 import { generateMeme } from '../services/ai.orchestrator';
 import { uploadToCloudinary } from '../services/cloudinary.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+type TextMemeContext = {
+  situation?: string;
+  people?: string;
+  tone?: string;
+  audience?: string;
+  extra?: string;
+};
+
+const buildTextMemeBrief = (text: string, context?: TextMemeContext): string => {
+  const parts = [
+    `Texte brut: ${text}`,
+    context?.situation ? `Situation: ${context.situation}` : '',
+    context?.people ? `Personnages: ${context.people}` : '',
+    context?.tone ? `Ton: ${context.tone}` : '',
+    context?.audience ? `Public cible: ${context.audience}` : '',
+    context?.extra ? `Details supplementaires: ${context.extra}` : '',
+    'Consigne: transforme cela en meme. La legende doit ressembler a un vrai meme, etre concise, naturelle, orientee contexte, et readable en une seconde.',
+  ].filter(Boolean);
+
+  return parts.join('\n');
+};
+
 export const generateFromText = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { text } = req.body;
+    const { text, context } = req.body as { text?: string; context?: TextMemeContext };
     const userId = req.userId!;
 
     if (!text) {
@@ -14,7 +36,7 @@ export const generateFromText = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    const result = await generateMeme('text', text, 'CM');
+    const result = await generateMeme('text', buildTextMemeBrief(text, context), 'CM');
 
     let cloudResult;
     try {
@@ -49,7 +71,7 @@ export const generateFromText = async (req: AuthRequest, res: Response): Promise
     });
   } catch (error) {
     console.error('generateFromText error:', error);
-    res.status(503).json({ error: 'Service IA temporairement indisponible, réessaie dans quelques minutes' });
+    res.status(503).json({ error: 'Service IA temporairement indisponible, reessaie dans quelques minutes' });
   }
 };
 
@@ -80,7 +102,7 @@ export const generateFromImage = async (req: AuthRequest, res: Response): Promis
       const meme = new Meme({
         userId,
         type: 'image',
-        inputText: 'Image uploadée par l\'utilisateur',
+        inputText: 'Image uploadee par l utilisateur',
         caption: result.caption,
         imageUrl: cloudResult.url,
         webpUrl: cloudResult.webpUrl,
@@ -102,7 +124,7 @@ export const generateFromImage = async (req: AuthRequest, res: Response): Promis
     });
   } catch (error) {
     console.error('generateFromImage error:', error);
-    res.status(503).json({ error: 'Service IA temporairement indisponible, réessaie dans quelques minutes' });
+    res.status(503).json({ error: 'Service IA temporairement indisponible, reessaie dans quelques minutes' });
   }
 };
 
@@ -151,6 +173,6 @@ export const generateFromPrompt = async (req: AuthRequest, res: Response): Promi
     });
   } catch (error) {
     console.error('generateFromPrompt error:', error);
-    res.status(503).json({ error: 'Service IA temporairement indisponible, réessaie dans quelques minutes' });
+    res.status(503).json({ error: 'Service IA temporairement indisponible, reessaie dans quelques minutes' });
   }
 };

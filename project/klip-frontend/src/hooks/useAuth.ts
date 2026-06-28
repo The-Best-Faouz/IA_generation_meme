@@ -9,9 +9,27 @@ export interface User {
   language?: string;
 }
 
+let listeners: Function[] = [];
+let globalUser: User | null = null;
+let globalLoading: boolean = true;
+
+const notify = () => listeners.forEach(l => l());
+
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUserState] = useState<User | null>(globalUser);
+  const [loading, setLoadingState] = useState<boolean>(globalLoading);
+
+  useEffect(() => {
+    const listener = () => {
+      setUserState(globalUser);
+      setLoadingState(globalLoading);
+    };
+    listeners.push(listener);
+    return () => { listeners = listeners.filter(l => l !== listener); };
+  }, []);
+
+  const setUser = (u: User | null) => { globalUser = u; notify(); };
+  const setLoading = (l: boolean) => { globalLoading = l; notify(); };
 
   const loadUser = useCallback(async () => {
     try {
@@ -31,7 +49,10 @@ export const useAuth = () => {
   }, []);
 
   useEffect(() => {
-    loadUser();
+    // Only load if it's the first time
+    if (globalLoading) {
+      loadUser();
+    }
   }, [loadUser]);
 
   const login = async (email: string, password: string) => {

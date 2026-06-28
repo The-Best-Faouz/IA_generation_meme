@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Image, ScrollView, Text, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,7 @@ import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { Button } from '../../components/common/Button';
 import { TextOverlay } from '../../components/meme/TextOverlay';
 import { Icon } from '../../components/common/Icon';
-import Share from 'react-native-share';
+import { DownloadAndShareService } from '../../services/downloadAndShare.service';
 import { COLORS } from '../../constants/colors';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -22,14 +22,38 @@ export const PreviewScreen = () => {
   const route = useRoute();
   const params = (route.params ?? {}) as RouteParams;
   const { imageUrl = '', caption } = params;
+  const [isSharing, setIsSharing] = useState(false);
 
-  const handleShare = async () => {
+  const handleShareSticker = async () => {
     try {
-      await Share.open({
-        url: imageUrl,
-        message: caption || 'Regarde ce meme genere avec KLIP !',
+      setIsSharing(true);
+      await DownloadAndShareService.shareWhatsApp({
+        imageUrl,
+        caption: caption || 'Regarde ce meme genere avec KLIP !',
+        asSticker: true,
       });
-    } catch {}
+    } catch (error) {
+      console.error('Share failed:', error);
+      Alert.alert('Erreur', 'Impossible de partager le meme. Verifie ta connexion internet.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleShareImage = async () => {
+    try {
+      setIsSharing(true);
+      await DownloadAndShareService.shareWhatsApp({
+        imageUrl,
+        caption: caption || 'Regarde ce meme genere avec KLIP !',
+        asSticker: false,
+      });
+    } catch (error) {
+      console.error('Share failed:', error);
+      Alert.alert('Erreur', 'Impossible de partager le meme. Verifie ta connexion internet.');
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const handleSave = () => {
@@ -56,7 +80,17 @@ export const PreviewScreen = () => {
         )}
 
         <View style={styles.actions}>
-          <Button title="Partager" onPress={handleShare} variant="secondary" />
+          <Button
+            title={isSharing ? 'Partage en cours...' : 'Partager (Sticker)'}
+            onPress={handleShareSticker}
+            variant="secondary"
+            disabled={isSharing}
+          />
+          <Button
+            title={isSharing ? 'Partage en cours...' : 'Partager (Image)'}
+            onPress={handleShareImage}
+            disabled={isSharing}
+          />
           <Button title="Sauvegarder dans la galerie" onPress={handleSave} />
         </View>
       </ScrollView>
