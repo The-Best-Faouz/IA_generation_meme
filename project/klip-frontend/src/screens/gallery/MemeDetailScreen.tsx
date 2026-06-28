@@ -61,6 +61,7 @@ export const MemeDetailScreen = () => {
     prompt: '#f59e0b',
     gif: '#10b981',
     faceswap: '#ec4899',
+    voice: '#06b6d4',
   };
 
   return (

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IMeme extends Document {
   userId: mongoose.Types.ObjectId;
-  type: 'text' | 'image' | 'prompt' | 'faceswap' | 'gif';
+  type: 'text' | 'image' | 'prompt' | 'faceswap' | 'gif' | 'voice';
   inputText: string;
   audioTranscription?: string;
   caption: string;
@@ -17,7 +17,7 @@ export interface IMeme extends Document {
 const MemeSchema = new Schema<IMeme>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    type: { type: String, required: true, enum: ['text', 'image', 'prompt', 'faceswap', 'gif'] },
+    type: { type: String, required: true, enum: ['text', 'image', 'prompt', 'faceswap', 'gif', 'voice'] },
     inputText: { type: String, required: true },
     audioTranscription: { type: String, default: null },
     caption: { type: String, required: true },

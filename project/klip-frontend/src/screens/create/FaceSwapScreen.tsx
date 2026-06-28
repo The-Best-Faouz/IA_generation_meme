@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Image, ScrollView, Text, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
 import { AppStackParamList } from '../../navigation/AppNavigator';
@@ -13,13 +13,21 @@ import api from '../../services/api.service';
 import { COLORS } from '../../constants/colors';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
+type ScreenRoute = RouteProp<AppStackParamList, 'FaceSwap'>;
 
 export const FaceSwapScreen = () => {
   const navigation = useNavigation<NavProp>();
-  const [sourceUri, setSourceUri] = useState<string | null>(null);
+  const route = useRoute<ScreenRoute>();
+  const [sourceUri, setSourceUri] = useState<string | null>(route.params?.sourceUri || null);
   const [faceUri, setFaceUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (route.params?.sourceUri) {
+      setSourceUri(route.params.sourceUri);
+    }
+  }, [route.params?.sourceUri]);
 
   const pickImage = (type: 'source' | 'face') => {
     launchImageLibrary({ mediaType: 'photo', quality: 0.9 }, (response: ImagePickerResponse) => {

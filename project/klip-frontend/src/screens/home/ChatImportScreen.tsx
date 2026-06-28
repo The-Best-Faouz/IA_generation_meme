@@ -50,8 +50,12 @@ export const ChatImportScreen = () => {
     if (!chatContent.trim()) { setError('Colle l export WhatsApp ici'); return; }
     setGenerating(true); setError('');
     try {
-      const res = await api.post('/chat/generate-memes', { content: chatContent, country: 'FR', count: 5 });
-      setMemesResult(res.data.memes);
+      const res = await api.post('/chat/generate-memes', { content: chatContent, country: 'CM' });
+      navigation.navigate('Preview', {
+        imageUrl: res.data.imageUrl,
+        caption: res.data.caption,
+        memeId: res.data.memeId,
+      });
     } catch (err: any) { setError(err.response?.data?.error || 'Erreur de generation'); }
     setGenerating(false);
   };
@@ -61,10 +65,14 @@ export const ChatImportScreen = () => {
     try {
       const res = await api.post('/chat/generate-memes', {
         content: notif.text || notif.title || '',
-        country: 'FR', count: 1,
+        country: 'CM',
       });
-      setMemesResult(res.data.memes);
-    } catch (err: any) { setError(err.response?.data?.error || 'Erreur'); }
+      navigation.navigate('Preview', {
+        imageUrl: res.data.imageUrl,
+        caption: res.data.caption,
+        memeId: res.data.memeId,
+      });
+    } catch (err: any) { setError(err.response?.data?.error || 'Erreur de generation'); }
     setGenerating(false);
   };
 

@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { generateCaptionWithGemini } from './gemini.service';
 import { generateCaptionWithOpenAI, generateImageWithDalle } from './openai.service';
 import { generateCaptionWithHuggingFace } from './huggingface.service';
@@ -20,13 +21,75 @@ const captionProviders: Array<{
   { name: 'huggingface', generate: generateCaptionWithHuggingFace },
 ];
 
-export const generateMeme = async (
+const escapeXml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const splitCaptionLines = (caption: string, maxChars = 32): string[] => {
+  const words = caption.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const candidate = currentLine ? `${currentLine} ${word}` : word;
+    if (candidate.length > maxChars && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = candidate;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+};
+
+const overlayCaptionOnImage = async (
+  imageBuffer: Buffer,
+  caption: string
+): Promise<Buffer> => {
+  const image = sharp(imageBuffer).ensureAlpha();
+  const metadata = await image.metadata();
+  const width = metadata.width || 512;
+  const height = metadata.height || 512;
+  const lines = splitCaptionLines(
+    caption,
+    Math.max(24, Math.floor(width / 18))
+  );
+  const fontSize = Math.max(20, Math.round(width / 18));
+  const lineHeight = fontSize + 10;
+  const captionHeight = lines.length * lineHeight + 24;
+  const overlaySvg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="${height - captionHeight}" width="${width}" height="${captionHeight}" fill="rgba(0,0,0,0.54)" rx="14" />
+      ${lines
+        .map((line, index) => {
+          const y = height - captionHeight + 20 + index * lineHeight;
+          return `<text x="${width / 2}" y="${y}" font-family="Impact,Arial,Helvetica,sans-serif" font-size="${fontSize}" fill="#ffffff" stroke="#000000" stroke-width="3" text-anchor="middle">${escapeXml(line)}</text>`;
+        })
+        .join('')}
+    </svg>
+  `;
+
+  return image
+    .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
+    .webp({ quality: 90 })
+    .toBuffer();
+};
+
+const generateBestCaption = async (
   type: 'text' | 'image' | 'prompt',
   content: string | Buffer,
-  country: string
-): Promise<MemeResult> => {
-  const culturalPrompt = `Genere un contenu humoristique adapte a la culture de : ${country}. Si le pays est CM (Cameroun), integre des references locales (noms populaires, expressions locales, contexte africain) si pertinent.`;
-
+  country: string,
+  culturalPrompt: string
+): Promise<{ caption: string; provider: string }> => {
   let bestCaption = '';
   let usedProvider = '';
 
@@ -47,20 +110,53 @@ export const generateMeme = async (
     usedProvider = 'fallback';
   }
 
+  return { caption: bestCaption, provider: usedProvider };
+};
+
+export const generateMeme = async (
+  type: 'text' | 'image' | 'prompt',
+  content: string | Buffer,
+  country: string
+): Promise<MemeResult> => {
+  const culturalPrompt = `Genere un contenu humoristique adapte a la culture de : ${country}. Si le pays est CM (Cameroun), integre des references locales (noms populaires, expressions locales, contexte africain) si pertinent.`;
+
+  const { caption, provider } = await generateBestCaption(
+    type,
+    content,
+    country,
+    culturalPrompt
+  );
+
   try {
-    const imageBuffer = await generateImageWithPollinations(bestCaption);
-    return { imageBuffer, caption: bestCaption, provider: `${usedProvider}+pollinations` };
+    const imageBuffer = await generateImageWithPollinations(caption);
+    return { imageBuffer, caption, provider: `${provider}+pollinations` };
   } catch (err: any) {
     console.log('Pollinations image generation failed:', err.message);
   }
 
   try {
-    const imageBuffer = await generateImageWithDalle(bestCaption);
-    return { imageBuffer, caption: bestCaption, provider: `${usedProvider}+dalle-image` };
+    const imageBuffer = await generateImageWithDalle(caption);
+    return { imageBuffer, caption, provider: `${provider}+dalle-image` };
   } catch (err: any) {
     console.log('DALL-E image generation failed:', err.message);
     const axios = require('axios');
     const fallback = await axios.get('https://dummyimage.com/600x600/2C2C2C/FFFFFF.png&text=Image+Non+Disponible', { responseType: 'arraybuffer' });
-    return { imageBuffer: Buffer.from(fallback.data, 'binary'), caption: bestCaption, provider: `${usedProvider}+fallback-image` };
+    return { imageBuffer: Buffer.from(fallback.data, 'binary'), caption, provider: `${provider}+fallback-image` };
   }
+};
+
+export const remixImageWithCaption = async (
+  imageBuffer: Buffer,
+  country: string
+): Promise<MemeResult> => {
+  const culturalPrompt = `Genere un contenu humoristique adapte a la culture de : ${country}. Si le pays est CM (Cameroun), integre des references locales (noms populaires, expressions locales, contexte africain) si pertinent.`;
+
+  const { caption, provider } = await generateBestCaption(
+    'image',
+    imageBuffer,
+    country,
+    culturalPrompt
+  );
+  const outputBuffer = await overlayCaptionOnImage(imageBuffer, caption);
+  return { imageBuffer: outputBuffer, caption, provider: `${provider}+overlay` };
 };

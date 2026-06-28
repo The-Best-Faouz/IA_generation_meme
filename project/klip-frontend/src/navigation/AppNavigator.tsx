@@ -7,7 +7,7 @@ import { StatusRemixerScreen } from '../screens/create/StatusRemixerScreen';
 import { PromptScreen } from '../screens/create/PromptScreen';
 import { FaceSwapScreen } from '../screens/create/FaceSwapScreen';
 import { GifEditorScreen } from '../screens/create/GifEditorScreen';
-import { StickerStudioScreen } from '../screens/create/StickerStudioScreen';
+import { VoiceMemeScreen } from '../screens/create/VoiceMemeScreen';
 import { ShareIntentHandlerScreen } from '../screens/create/ShareIntentHandlerScreen';
 import { PreviewScreen } from '../screens/preview/PreviewScreen';
 import { GalleryScreen } from '../screens/gallery/GalleryScreen';
@@ -24,9 +24,9 @@ export type AppStackParamList = {
   ContextReader: undefined;
   StatusRemixer: undefined;
   Prompt: undefined;
-  FaceSwap: undefined;
+  FaceSwap: { sourceUri?: string } | undefined;
   GifEditor: undefined;
-  StickerStudio: { imageUri?: string } | undefined;
+  VoiceMeme: undefined;
   ShareIntentHandler: undefined;
   Preview: { imageUrl: string; caption?: string; memeId?: string };
   MemeDetail: { id: string };
@@ -66,7 +66,7 @@ export const AppNavigator = () => {
       <Stack.Screen name="Prompt" component={PromptScreen} />
       <Stack.Screen name="FaceSwap" component={FaceSwapScreen} />
       <Stack.Screen name="GifEditor" component={GifEditorScreen} />
-      <Stack.Screen name="StickerStudio" component={StickerStudioScreen} />
+      <Stack.Screen name="VoiceMeme" component={VoiceMemeScreen} />
       <Stack.Screen name="ShareIntentHandler" component={ShareIntentHandlerScreen} />
       <Stack.Screen name="Preview" component={PreviewScreen} />
       <Stack.Screen name="MemeDetail" component={MemeDetailScreen} />

@@ -1,8 +1,10 @@
 import { Response } from 'express';
 import { Meme } from '../models/Meme.model';
-import { generateMeme } from '../services/ai.orchestrator';
+import { generateMeme, remixImageWithCaption } from '../services/ai.orchestrator';
 import { uploadToCloudinary } from '../services/cloudinary.service';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { transcribeAudio } from '../services/groq.service';
+import fs from 'fs';
 
 type TextMemeContext = {
   situation?: string;
@@ -87,7 +89,7 @@ export const generateFromImage = async (req: AuthRequest, res: Response): Promis
     const fs = await import('fs');
     const imageBuffer = fs.readFileSync(req.file.path);
 
-    const result = await generateMeme('image', imageBuffer, 'CM');
+    const result = await remixImageWithCaption(imageBuffer, 'CM');
 
     let cloudResult;
     try {
@@ -174,5 +176,71 @@ export const generateFromPrompt = async (req: AuthRequest, res: Response): Promi
   } catch (error) {
     console.error('generateFromPrompt error:', error);
     res.status(503).json({ error: 'Service IA temporairement indisponible, reessaie dans quelques minutes' });
+  }
+};
+
+export const generateFromVoice = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.userId!;
+
+    if (!req.file) {
+      res.status(400).json({ error: 'Fichier audio requis' });
+      return;
+    }
+
+    const audioBuffer = fs.readFileSync(req.file.path);
+    const transcription = await transcribeAudio(audioBuffer);
+
+    if (!transcription || transcription === 'Transcription indisponible') {
+      res.status(422).json({ error: 'Transcription de l\'audio impossible ou vide' });
+      try { fs.unlinkSync(req.file.path); } catch {}
+      return;
+    }
+
+    const result = await generateMeme('text', buildTextMemeBrief(transcription), 'CM');
+
+    let cloudResult;
+    try {
+      cloudResult = await uploadToCloudinary(result.imageBuffer, 'meme');
+    } catch {
+      const base64 = result.imageBuffer.toString('base64');
+      cloudResult = { url: `data:image/svg+xml;base64,${base64}`, webpUrl: '', publicId: `local_${Date.now()}` };
+    }
+
+    let memeId = null;
+    try {
+      const meme = new Meme({
+        userId,
+        type: 'voice',
+        inputText: transcription,
+        audioTranscription: transcription,
+        caption: result.caption,
+        imageUrl: cloudResult.url,
+        webpUrl: cloudResult.webpUrl,
+        cloudinaryPublicId: cloudResult.publicId,
+        aiProvider: result.provider,
+      });
+      await meme.save();
+      memeId = meme._id;
+    } catch (e) {
+      console.error('Error saving voice meme:', e);
+    }
+
+    try { fs.unlinkSync(req.file.path); } catch {}
+
+    res.status(200).json({
+      imageUrl: cloudResult.url,
+      webpUrl: cloudResult.webpUrl,
+      caption: result.caption,
+      transcription,
+      memeId,
+      aiProvider: result.provider,
+    });
+  } catch (error) {
+    console.error('generateFromVoice error:', error);
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+    res.status(503).json({ error: 'Service IA de transcription/generation temporairement indisponible' });
   }
 };

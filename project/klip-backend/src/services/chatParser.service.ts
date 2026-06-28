@@ -22,6 +22,7 @@ export function parseWhatsAppChat(content: string): ParsedChat {
   ];
 
   for (const line of lines) {
+    let matched = false;
     for (const pattern of patterns) {
       const match = line.match(pattern);
       if (match) {
@@ -33,9 +34,39 @@ export function parseWhatsAppChat(content: string): ParsedChat {
           text: text.trim(),
           timestamp: new Date(),
         });
+        matched = true;
         break;
       }
     }
+  }
+
+  // Fallback for raw, unstructured copypastas of shape "Name: Message" without timestamps
+  if (messages.length === 0) {
+    for (const line of lines) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx > 0 && colonIdx < 30) {
+        const sender = line.substring(0, colonIdx).trim();
+        const text = line.substring(colonIdx + 1).trim();
+        if (sender && text && !sender.includes(' ') && !sender.match(/\d/)) { // simple checks for a name
+          participants.add(sender);
+          messages.push({
+            sender,
+            text,
+            timestamp: new Date(),
+          });
+        }
+      }
+    }
+  }
+
+  // Final fallback: treat the whole content as a single raw prompt message
+  if (messages.length === 0) {
+    participants.add('Auteur');
+    messages.push({
+      sender: 'Auteur',
+      text: content.trim(),
+      timestamp: new Date(),
+    });
   }
 
   const title = participants.size > 0

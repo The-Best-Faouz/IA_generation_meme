@@ -39,7 +39,7 @@ export const ShareIntentHandlerScreen = () => {
   }, [sharedContent]);
 
   const handleTextToMeme = () => { navigation.navigate('ContextReader'); clearShare(); };
-  const handleImageToSticker = () => { navigation.navigate('StickerStudio', { imageUri: sharedContent?.imageUri || sharedContent?.uris?.[0] }); clearShare(); };
+  const handleImageToFaceSwap = () => { navigation.navigate('FaceSwap', { sourceUri: sharedContent?.imageUri || sharedContent?.uris?.[0] }); clearShare(); };
   const handleGifEditor = () => { navigation.navigate('GifEditor'); clearShare(); };
   const handleFaceSwap = () => { navigation.navigate('FaceSwap'); clearShare(); };
 
@@ -135,7 +135,7 @@ export const ShareIntentHandlerScreen = () => {
 
             {(sharedContent.type === 'image' || sharedContent.type === 'multiple') && (
               <>
-                <Button title="Face Swap sur cette image" onPress={handleImageToSticker} />
+                <Button title="Face Swap sur cette image" onPress={handleImageToFaceSwap} />
                 <Button title="Ajouter du texte IA" onPress={() => { navigation.navigate('StatusRemixer'); clearShare(); }} variant="secondary" />
                 <Button title="Face Swap avec un visage" onPress={handleFaceSwap} variant="outline" />
               </>
