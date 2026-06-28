@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { parseWhatsAppChat, conversationStats } from '../services/chatParser.service';
-import { generateWithGemini } from '../services/gemini.service';
+import { generateMeme } from '../services/ai.orchestrator';
 
 export const parseChat = async (req: Request, res: Response) => {
   try {
@@ -49,11 +49,12 @@ Contexte culturel: ${country || 'FR'}
 Conversation:
 ${recentMessages}`;
 
-    const result = await generateWithGemini('text', Buffer.from(prompt), country || 'FR', '');
+    const result = await generateMeme('text', prompt, country || 'FR');
     return res.json({
       chatTitle: parsed.title,
       participants: parsed.participants,
       memes: result.caption,
+      imageUrl: '[généré par DALL-E]',
     });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

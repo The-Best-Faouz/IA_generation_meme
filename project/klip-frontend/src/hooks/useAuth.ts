@@ -23,6 +23,7 @@ export const useAuth = () => {
       const res = await api.get('/user/profile');
       setUser(res.data.user);
     } catch {
+      await AsyncStorage.multiRemove(['@klip/token', '@klip/refreshToken']);
       setUser(null);
     } finally {
       setLoading(false);
@@ -33,8 +34,8 @@ export const useAuth = () => {
     loadUser();
   }, [loadUser]);
 
-  const login = async (email: string, _password: string) => {
-    const res = await api.post('/auth/login', { email, password: _password }, { timeout: 3000 });
+  const login = async (email: string, password: string) => {
+    const res = await api.post('/auth/login', { email, password });
     await AsyncStorage.setItem('@klip/token', res.data.token);
     await AsyncStorage.setItem('@klip/refreshToken', res.data.refreshToken);
     setUser(res.data.user);
@@ -42,7 +43,7 @@ export const useAuth = () => {
   };
 
   const register = async (email: string, password: string, country: string, language: string) => {
-    const res = await api.post('/auth/register', { email, password, country, language }, { timeout: 3000 });
+    const res = await api.post('/auth/register', { email, password, country, language });
     await AsyncStorage.setItem('@klip/token', res.data.token);
     await AsyncStorage.setItem('@klip/refreshToken', res.data.refreshToken);
     setUser(res.data.user);

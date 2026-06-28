@@ -1,7 +1,8 @@
-import { generateWithGemini } from './gemini.service';
-import { generateWithOpenAI } from './openai.service';
-import { generateWithHuggingFace } from './huggingface.service';
-import { generateWithGroq } from './groq-text.service';
+import { generateCaptionWithGemini } from './gemini.service';
+import { generateCaptionWithOpenAI } from './openai.service';
+import { generateCaptionWithHuggingFace } from './huggingface.service';
+import { generateCaptionWithGroq } from './groq-text.service';
+import { generateImageWithDalle } from './openai.service';
 
 export interface MemeResult {
   imageBuffer: Buffer;
@@ -9,14 +10,14 @@ export interface MemeResult {
   provider: string;
 }
 
-const providers: Array<{
+const captionProviders: Array<{
   name: string;
-  generate: typeof generateWithGroq;
+  generate: (type: 'text' | 'image' | 'prompt', content: string | Buffer, country: string, culturalPrompt: string) => Promise<string>;
 }> = [
-  { name: 'groq', generate: generateWithGroq },
-  { name: 'gemini', generate: generateWithGemini },
-  { name: 'openai', generate: generateWithOpenAI },
-  { name: 'huggingface', generate: generateWithHuggingFace },
+  { name: 'openai', generate: generateCaptionWithOpenAI },
+  { name: 'groq', generate: generateCaptionWithGroq },
+  { name: 'gemini', generate: generateCaptionWithGemini },
+  { name: 'huggingface', generate: generateCaptionWithHuggingFace },
 ];
 
 export const generateMeme = async (
@@ -26,15 +27,31 @@ export const generateMeme = async (
 ): Promise<MemeResult> => {
   const culturalPrompt = `Génère un contenu humoristique adapté à la culture de : ${country}. Si le pays est CM (Cameroun), intègre des références locales (noms populaires, expressions locales, contexte africain) si pertinent.`;
 
-  for (const provider of providers) {
+  let bestCaption = '';
+  let usedProvider = '';
+
+  for (const provider of captionProviders) {
     try {
-      const result = await provider.generate(type, content, country, culturalPrompt);
-      console.log(`provider: ${provider.name}`);
-      return { ...result, provider: provider.name };
+      const caption = await provider.generate(type, content, country, culturalPrompt);
+      if (caption && caption.length > bestCaption.length) {
+        bestCaption = caption;
+        usedProvider = provider.name;
+      }
     } catch (err: any) {
-      console.log(`${provider.name} failed:`, err.message);
+      console.log(`${provider.name} caption failed:`, err.message);
     }
   }
 
-  throw new Error('Tous les providers IA ont échoué');
+  if (!bestCaption) {
+    bestCaption = 'Mème généré par KLIP';
+    usedProvider = 'fallback';
+  }
+
+  try {
+    const imageBuffer = await generateImageWithDalle(bestCaption);
+    return { imageBuffer, caption: bestCaption, provider: usedProvider };
+  } catch (err: any) {
+    console.log('DALL-E image generation failed:', err.message);
+    throw new Error('Impossible de générer l\'image du mème. Tous les services IA ont échoué.');
+  }
 };

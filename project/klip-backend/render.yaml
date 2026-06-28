@@ -4,9 +4,15 @@ services:
     env: node
     buildCommand: npm install && npm run build
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: RENDER_URL
+        fromService:
+          type: web
+          name: klip-backend
+          property: url
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
@@ -28,4 +34,6 @@ services:
       - key: CLOUDINARY_API_KEY
         sync: false
       - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: FRONTEND_URL
         sync: false

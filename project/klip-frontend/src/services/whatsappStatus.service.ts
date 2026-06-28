@@ -1,4 +1,4 @@
-import { NativeModules } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
 const { StatusRemixerModule } = NativeModules;
 
@@ -11,7 +11,7 @@ export interface WhatsAppStatus {
 
 async function scanStatuses(): Promise<WhatsAppStatus[]> {
   try {
-    if (StatusRemixerModule?.scanStatuses) {
+    if (Platform.OS === 'android' && StatusRemixerModule?.scanStatuses) {
       const result = await StatusRemixerModule.scanStatuses();
       return result ?? [];
     }

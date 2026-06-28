@@ -11,27 +11,34 @@ import { COLORS } from '../../constants/colors';
 type HomeNavProp = NativeStackNavigationProp<AppStackParamList>;
 
 interface FeatureCard {
-  key: string;
+  screen: keyof AppStackParamList;
   label: string;
   desc: string;
   icon: 'chat' | 'image' | 'sparkle' | 'swap' | 'gif' | 'sticker' | 'telegram';
   color: string;
 }
 
+interface QuickAction {
+  screen: keyof AppStackParamList;
+  label: string;
+  desc: string;
+  icon: 'import' | 'notification' | 'chat';
+}
+
 const FEATURES: FeatureCard[] = [
-  { key: 'ContextReader', label: 'Context Reader', desc: 'Transforme un texte en meme', icon: 'chat', color: '#0ea5e9' },
-  { key: 'StatusRemixer', label: 'Status Remixer', desc: 'Ajoute du texte a une image', icon: 'image', color: '#8b5cf6' },
-  { key: 'Prompt', label: 'Prompt libre', desc: 'Decris le meme de tes reves', icon: 'sparkle', color: '#f59e0b' },
-  { key: 'FaceSwap', label: 'Face Swap', desc: 'Echange des visages', icon: 'swap', color: '#ec4899' },
-  { key: 'GifEditor', label: 'GIF Editor', desc: 'Edite un GIF a la voix', icon: 'gif', color: '#10b981' },
-  { key: 'StickerStudio', label: 'Sticker Studio', desc: 'Transforme un sticker', icon: 'sticker', color: '#06b6d4' },
-  { key: 'TelegramConnect', label: 'Telegram', desc: 'Connecte ton bot', icon: 'telegram', color: '#3b82f6' },
+  { screen: 'ContextReader', label: 'Context Reader', desc: 'Transforme un texte en meme', icon: 'chat', color: '#0ea5e9' },
+  { screen: 'StatusRemixer', label: 'Status Remixer', desc: 'Ajoute du texte a une image', icon: 'image', color: '#8b5cf6' },
+  { screen: 'Prompt', label: 'Prompt libre', desc: 'Decris le meme de tes reves', icon: 'sparkle', color: '#f59e0b' },
+  { screen: 'FaceSwap', label: 'Face Swap', desc: 'Echange des visages', icon: 'swap', color: '#ec4899' },
+  { screen: 'GifEditor', label: 'GIF Editor', desc: 'Edite un GIF a la voix', icon: 'gif', color: '#10b981' },
+  { screen: 'StickerStudio', label: 'Sticker Studio', desc: 'Transforme un sticker', icon: 'sticker', color: '#06b6d4' },
+  { screen: 'TelegramConnect', label: 'Telegram', desc: 'Connecte ton bot', icon: 'telegram', color: '#3b82f6' },
 ];
 
-const QUICK_ACTIONS = [
-  { key: 'ShareIntentHandler', label: 'Contenu partage', desc: 'Depuis une autre app', icon: 'import' as const },
-  { key: 'NotificationFeed', label: 'Flux discussions', desc: 'Suggestions automatiques', icon: 'notification' as const },
-  { key: 'ChatImport', label: 'Import WhatsApp', desc: 'Analyse une conversation', icon: 'chat' as const },
+const QUICK_ACTIONS: QuickAction[] = [
+  { screen: 'ShareIntentHandler', label: 'Contenu partage', desc: 'Depuis une autre app', icon: 'import' },
+  { screen: 'NotificationFeed', label: 'Flux discussions', desc: 'Suggestions automatiques', icon: 'notification' },
+  { screen: 'ChatImport', label: 'Import WhatsApp', desc: 'Analyse une conversation', icon: 'chat' },
 ];
 
 export const HomeScreen = () => {
@@ -48,9 +55,9 @@ export const HomeScreen = () => {
       <View style={styles.quickActionsRow}>
         {QUICK_ACTIONS.map((action) => (
           <TouchableOpacity
-            key={action.key}
+            key={action.screen}
             style={styles.quickAction}
-            onPress={() => navigation.navigate(action.key as any)}
+            onPress={() => navigation.navigate(action.screen as any)}
             activeOpacity={0.7}>
             <View style={styles.quickActionIcon}>
               <Icon name={action.icon} size={20} color={COLORS.primary} />
@@ -66,9 +73,9 @@ export const HomeScreen = () => {
       <View style={styles.featuresGrid}>
         {FEATURES.map((feature) => (
           <TouchableOpacity
-            key={feature.key}
+            key={feature.screen}
             style={styles.featureCard}
-            onPress={() => navigation.navigate(feature.key as any)}
+            onPress={() => navigation.navigate(feature.screen as any)}
             activeOpacity={0.7}>
             <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
               <Icon name={feature.icon} size={22} color={feature.color} />

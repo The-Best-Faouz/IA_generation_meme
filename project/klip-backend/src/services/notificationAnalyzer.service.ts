@@ -1,4 +1,4 @@
-import { generateWithGemini } from './gemini.service';
+import { generateCaptionWithGemini } from './gemini.service';
 
 interface ConversationMessage {
   sender: string;
@@ -37,8 +37,8 @@ Contexte culturel: ${country}
 Conversation:
 ${conversationText}`;
 
-    const result = await generateWithGemini('text', Buffer.from(prompt), country, '');
-    const text = typeof result.caption === 'string' ? result.caption : '';
+    const result = await generateCaptionWithGemini('text', prompt, country, '');
+    const text = typeof result === 'string' ? result : '';
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {

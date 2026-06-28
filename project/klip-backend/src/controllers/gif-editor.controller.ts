@@ -10,7 +10,7 @@ import {
   getGifMetadata,
 } from '../services/gif.service';
 import { uploadToCloudinary } from '../services/cloudinary.service';
-import { generateWithGemini } from '../services/gemini.service';
+import { generateCaptionWithGemini } from '../services/gemini.service';
 
 export const getGifInfo = async (req: Request, res: Response) => {
   try {
@@ -43,7 +43,7 @@ export const voiceEditGif = async (req: Request, res: Response) => {
 
     const aiPrompt = `Tu es un assistant qui analyse des images GIF. Voici la commande vocale de l'utilisateur: "${voiceCommand}".
 Décris précisément ce qu'il faut modifier sur chaque frame du GIF. Sois très spécifique.`;
-    const aiResult = await generateWithGemini('image', file.buffer, language || 'FR', aiPrompt);
+    const aiResultCaption = await generateCaptionWithGemini('image', file.buffer, language || 'FR', aiPrompt);
 
     const maxFrames = Math.min(frames.length, 20);
     for (let i = 0; i < maxFrames; i++) {
@@ -66,7 +66,7 @@ Décris précisément ce qu'il faut modifier sur chaque frame du GIF. Sois très
       imageUrl: cloudResult.url,
       publicId: cloudResult.publicId,
       provider: 'gemini',
-      aiAnalysis: aiResult.caption,
+      aiAnalysis: aiResultCaption,
       originalFrames: frames.length,
       processedFrames: editedPaths.length,
     });

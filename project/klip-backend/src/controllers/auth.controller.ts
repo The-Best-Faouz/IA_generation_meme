@@ -6,6 +6,8 @@ import { User } from '../models/User.model';
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'default_refresh_secret';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const generateTokens = (userId: string) => {
   const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '24h' });
   const refreshToken = jwt.sign({ userId }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
@@ -21,23 +23,34 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (!EMAIL_REGEX.test(email)) {
+      res.status(400).json({ error: 'Format d\'email invalide' });
+      return;
+    }
+
+    if (password.length < 6) {
+      res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+      return;
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       res.status(409).json({ error: 'Email déjà utilisé' });
       return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const { token, refreshToken } = generateTokens(email);
-    const hashedRefresh = await bcrypt.hash(refreshToken, 12);
 
     const user = new User({
-      email: email.toLowerCase(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
       country,
       language,
-      refreshToken: hashedRefresh,
     });
+
+    const { token, refreshToken } = generateTokens(user._id.toString());
+    const hashedRefresh = await bcrypt.hash(refreshToken, 12);
+    user.refreshToken = hashedRefresh;
 
     await user.save();
 
@@ -48,7 +61,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur. Réessaie dans quelques secondes.' });
   }
 };
 
@@ -61,7 +74,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!EMAIL_REGEX.test(email)) {
+      res.status(400).json({ error: 'Format d\'email invalide' });
+      return;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       res.status(401).json({ error: 'Identifiants incorrects' });
       return;
@@ -85,7 +103,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur. Réessaie dans quelques secondes.' });
   }
 };
 

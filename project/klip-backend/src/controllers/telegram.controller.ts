@@ -2,9 +2,18 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { TelegramSession } from '../models/TelegramSession.model';
 import { User } from '../models/User.model';
-import TelegramBot from 'node-telegram-bot-api';
 
-const activeBots = new Map<string, TelegramBot>();
+const activeBots = new Map<string, any>();
+let TelegramBotModule: any = null;
+
+async function createBot(botToken: string): Promise<any> {
+  if (!TelegramBotModule) {
+    TelegramBotModule = await import('node-telegram-bot-api');
+  }
+  const BotClass = TelegramBotModule.default || TelegramBotModule;
+  const bot = new BotClass(botToken, { polling: false });
+  return bot;
+}
 
 export const connectBot = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -16,7 +25,7 @@ export const connectBot = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    const bot = new TelegramBot(botToken, { polling: false });
+    const bot = await createBot(botToken);
     const me = await bot.getMe();
 
     await User.findByIdAndUpdate(userId, { telegramBotToken: botToken });
@@ -53,7 +62,7 @@ export const getMessages = async (req: AuthRequest, res: Response): Promise<void
 
     let bot = activeBots.get(userId);
     if (!bot) {
-      bot = new TelegramBot(session.botToken, { polling: false });
+      bot = await createBot(session.botToken);
       activeBots.set(userId, bot);
     }
 
@@ -65,8 +74,8 @@ export const getMessages = async (req: AuthRequest, res: Response): Promise<void
 
     const updates = await bot.getUpdates({ limit });
     const messages = updates
-      .filter((u) => u.message?.text)
-      .map((u) => ({
+      .filter((u: any) => u.message?.text)
+      .map((u: any) => ({
         messageId: u.message?.message_id,
         text: u.message?.text,
         from: u.message?.from?.first_name || 'Inconnu',
@@ -98,7 +107,7 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
 
     let bot = activeBots.get(userId);
     if (!bot) {
-      bot = new TelegramBot(session.botToken, { polling: false });
+      bot = await createBot(session.botToken);
       activeBots.set(userId, bot);
     }
 
