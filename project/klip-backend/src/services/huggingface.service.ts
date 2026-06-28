@@ -31,3 +31,26 @@ export const generateCaptionWithHuggingFace = async (
   const generated = response.data?.[0]?.generated_text || response.data?.generated_text || '';
   return generated.replace(promptText, '').trim() || generated;
 };
+
+export const generateImageWithHuggingFace = async (prompt: string): Promise<Buffer> => {
+  const apiKey = process.env.HUGGINGFACE_API_KEY;
+  if (!apiKey) {
+    throw new Error('HUGGINGFACE_API_KEY non configuré');
+  }
+
+  const response = await axios.post(
+    'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
+    { inputs: `Meme humoristique: ${prompt}` },
+    {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      responseType: 'arraybuffer',
+      timeout: 30000,
+    }
+  );
+
+  if (!response.data) {
+    throw new Error('HuggingFace a échoué à générer l\'image');
+  }
+
+  return Buffer.from(response.data, 'binary');
+};

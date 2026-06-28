@@ -38,7 +38,9 @@ export const generateFromText = async (req: AuthRequest, res: Response): Promise
       });
       await meme.save();
       memeId = meme._id;
-    } catch {}
+    } catch (dbErr) {
+      console.error('Failed to save text meme to DB:', dbErr);
+    }
 
     res.status(200).json({
       imageUrl: cloudResult.url,
@@ -62,10 +64,11 @@ export const generateFromImage = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    const fs = await import('fs');
-    const imageBuffer = fs.readFileSync(req.file.path);
+    try {
+      const fs = await import('fs');
+      const imageBuffer = fs.readFileSync(req.file.path);
 
-    const result = await generateMeme('image', imageBuffer, 'CM');
+      const result = await generateMeme('image', imageBuffer, 'CM');
 
     let cloudResult;
     try {
@@ -75,31 +78,35 @@ export const generateFromImage = async (req: AuthRequest, res: Response): Promis
       cloudResult = { url: `data:image/svg+xml;base64,${base64}`, webpUrl: '', publicId: `local_${Date.now()}` };
     }
 
-    let memeId = null;
-    try {
-      const meme = new Meme({
-        userId,
-        type: 'image',
-        inputText: 'Image uploadée par l\'utilisateur',
-        caption: result.caption,
+      let memeId = null;
+      try {
+        const meme = new Meme({
+          userId,
+          type: 'image',
+          inputText: 'Image uploadée par l\'utilisateur',
+          caption: result.caption,
+          imageUrl: cloudResult.url,
+          webpUrl: cloudResult.webpUrl,
+          cloudinaryPublicId: cloudResult.publicId,
+          aiProvider: result.provider,
+        });
+        await meme.save();
+        memeId = meme._id;
+      } catch (dbErr) {
+        console.error('Failed to save image meme to DB:', dbErr);
+      }
+
+      res.status(200).json({
         imageUrl: cloudResult.url,
         webpUrl: cloudResult.webpUrl,
-        cloudinaryPublicId: cloudResult.publicId,
+        caption: result.caption,
+        memeId,
         aiProvider: result.provider,
       });
-      await meme.save();
-      memeId = meme._id;
-    } catch {}
-
-    try { fs.unlinkSync(req.file.path); } catch {}
-
-    res.status(200).json({
-      imageUrl: cloudResult.url,
-      webpUrl: cloudResult.webpUrl,
-      caption: result.caption,
-      memeId,
-      aiProvider: result.provider,
-    });
+    } finally {
+      const fs = await import('fs');
+      try { fs.unlinkSync(req.file.path); } catch (e) { console.error('Failed to unlink file:', e); }
+    }
   } catch (error) {
     console.error('generateFromImage error:', error);
     res.status(503).json({ error: 'Service IA temporairement indisponible, réessaie dans quelques minutes' });
@@ -140,7 +147,9 @@ export const generateFromPrompt = async (req: AuthRequest, res: Response): Promi
       });
       await meme.save();
       memeId = meme._id;
-    } catch {}
+    } catch (dbErr) {
+      console.error('Failed to save prompt meme to DB:', dbErr);
+    }
 
     res.status(200).json({
       imageUrl: cloudResult.url,
