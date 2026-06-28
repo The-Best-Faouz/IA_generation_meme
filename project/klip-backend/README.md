@@ -9,7 +9,7 @@
 - FFmpeg installé sur le système
 
 ## Installation
-1. `git clone <url-du-repo>`
+1. `git clone https://github.com/The-Best-Faouz/IA_generation_meme`
 2. `cd klip-backend`
 3. `npm install`
 4. `cp .env.example .env`
