@@ -105,7 +105,19 @@ export const MemeDetailScreen = () => {
         </View>
 
         <View style={styles.actions}>
-          <Button title="Partager" variant="secondary" onPress={() => {}} />
+          <Button title="Partager sur les réseaux" variant="secondary" onPress={async () => {
+            try {
+              const Share = (await import('react-native-share')).default;
+              await Share.open({
+                url: meme.imageUrl,
+                message: meme.caption || 'Regarde ce mème généré par KLIP !',
+              });
+            } catch (err: any) {
+              if (err.message !== 'User did not share') {
+                Alert.alert('Erreur', 'Impossible de partager ce mème.');
+              }
+            }
+          }} />
           <Button title="Supprimer" variant="outline" onPress={handleDelete} />
         </View>
       </ScrollView>
